@@ -59,6 +59,10 @@ import org.apache.hadoop.io.compress.zlib.ZlibCompressor;
 import org.apache.hadoop.io.compress.zlib.ZlibCompressor.CompressionLevel;
 import org.apache.hadoop.io.compress.zlib.ZlibCompressor.CompressionStrategy;
 import org.apache.hadoop.io.compress.zlib.ZlibFactory;
+import org.apache.hadoop.io.crypto.CryptoContext;
+import org.apache.hadoop.io.crypto.CryptoException;
+import org.apache.hadoop.io.crypto.Key;
+import org.apache.hadoop.io.crypto.aes.AESCodec;
 import org.apache.hadoop.util.LineReader;
 import org.apache.hadoop.util.NativeCodeLoader;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -80,25 +84,50 @@ public class TestCodec {
   private int count = 10000;
   private int seed = new Random().nextInt();
 
-  @Test
+  @Test(timeout=30000)
+  public void testAESCodec() throws IOException, CryptoException {
+    if (AESCodec.isNativeCodeLoaded()) {
+      codecTest(conf, seed, 0, "org.apache.hadoop.io.crypto.aes.AESCodec");
+      codecTest(conf, seed, count, "org.apache.hadoop.io.crypto.aes.AESCodec");
+    } 
+
+    //Test compression before encryption
+    LOG.info("Test compression before encryption");
+    conf.set(AESCodec.CRYPTO_COMPRESSOR, "org.apache.hadoop.io.compress.SnappyCodec");
+    if (AESCodec.isNativeCodeLoaded()) {
+      codecTest(conf, seed, 0, "org.apache.hadoop.io.crypto.aes.AESCodec");
+      codecTest(conf, seed, count, "org.apache.hadoop.io.crypto.aes.AESCodec");
+    }
+  }
+
+  @Test(timeout=30000)
+  public void testSequenceFileCryptoCodec() throws IOException, ClassNotFoundException,
+  InstantiationException, IllegalAccessException {
+    if(AESCodec.isNativeCodeLoaded()){
+      sequenceFileCodecTest(conf, 100, "org.apache.hadoop.io.crypto.aes.AESCodec", 100);
+      sequenceFileCodecTest(conf, 200000, "org.apache.hadoop.io.crypto.aes.AESCodec", 1000000);
+    }
+  }
+
+  @Test(timeout=30000)
   public void testDefaultCodec() throws IOException {
     codecTest(conf, seed, 0, "org.apache.hadoop.io.compress.DefaultCodec");
     codecTest(conf, seed, count, "org.apache.hadoop.io.compress.DefaultCodec");
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testGzipCodec() throws IOException {
     codecTest(conf, seed, 0, "org.apache.hadoop.io.compress.GzipCodec");
     codecTest(conf, seed, count, "org.apache.hadoop.io.compress.GzipCodec");
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testBZip2Codec() throws IOException {
     codecTest(conf, seed, 0, "org.apache.hadoop.io.compress.BZip2Codec");
     codecTest(conf, seed, count, "org.apache.hadoop.io.compress.BZip2Codec");
   }
   
-  @Test
+  @Test(timeout=30000)
   public void testSnappyCodec() throws IOException {
     if (SnappyCodec.isNativeCodeLoaded()) {
       codecTest(conf, seed, 0, "org.apache.hadoop.io.compress.SnappyCodec");
@@ -106,7 +135,7 @@ public class TestCodec {
     }
   }
   
-  @Test
+  @Test(timeout=30000)
   public void testLz4Codec() throws IOException {
     if (NativeCodeLoader.isNativeCodeLoaded()) {
       if (Lz4Codec.isNativeCodeLoaded()) {
@@ -118,13 +147,13 @@ public class TestCodec {
     }
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testDeflateCodec() throws IOException {
     codecTest(conf, seed, 0, "org.apache.hadoop.io.compress.DeflateCodec");
     codecTest(conf, seed, count, "org.apache.hadoop.io.compress.DeflateCodec");
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testGzipCodecWithParam() throws IOException {
     Configuration conf = new Configuration(this.conf);
     ZlibFactory.setCompressionLevel(conf, CompressionLevel.BEST_COMPRESSION);
@@ -146,6 +175,19 @@ public class TestCodec {
       throw new IOException("Illegal codec!");
     }
     LOG.info("Created a Codec object of type: " + codecClass);
+
+    if(codec instanceof AESCodec){
+      CryptoContext cryptoContext = new CryptoContext();
+
+      Key key = null;
+      try {
+        key = Key.derive("123456");
+      } catch (CryptoException e) {
+        throw new IOException(e);
+      }
+      cryptoContext.setKey(key);
+      ((AESCodec)codec).setCryptoContext(cryptoContext);
+    }
 
     // Generate data
     DataOutputBuffer data = new DataOutputBuffer();
@@ -217,8 +259,20 @@ public class TestCodec {
     LOG.info("SUCCESS! Completed checking " + count + " records");
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testSplitableCodecs() throws Exception {
+    if(AESCodec.isNativeCodeLoaded()){
+      conf.set(AESCodec.CRYPTO_COMPRESSOR, "org.apache.hadoop.io.compress.SnappyCodec");
+      try {
+        @SuppressWarnings("unchecked")
+        Class<? extends SplittableCompressionCodec> aesClass = 
+            (Class<? extends SplittableCompressionCodec>)conf.getClassByName("org.apache.hadoop.io.crypto.aes.AESCodec");
+        testSplitableCodec(aesClass);
+      } catch (ClassNotFoundException cnfe) {
+        throw new IOException("Illegal codec!");
+      }
+    }
+    
     testSplitableCodec(BZip2Codec.class);
   }
 
@@ -233,6 +287,20 @@ public class TestCodec {
     rand.setSeed(seed);
     SplittableCompressionCodec codec =
       ReflectionUtils.newInstance(codecClass, conf);
+
+    if(codec instanceof AESCodec){
+      CryptoContext cryptoContext = new CryptoContext();
+
+      Key key = null;
+      try {
+        key = Key.derive("123456");
+      } catch (CryptoException e) {
+        throw new IOException(e);
+      }
+      cryptoContext.setKey(key);
+      ((AESCodec)codec).setCryptoContext(cryptoContext);
+    }
+
     final FileSystem fs = FileSystem.getLocal(conf);
     final FileStatus infile =
       fs.getFileStatus(writeSplitTestFile(fs, rand, codec, DEFLBYTES));
@@ -319,7 +387,7 @@ public class TestCodec {
     return file;
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testCodecPoolGzipReuse() throws Exception {
     Configuration conf = new Configuration();
     conf.setBoolean(CommonConfigurationKeys.IO_NATIVE_LIB_AVAILABLE_KEY, true);
@@ -404,7 +472,7 @@ public class TestCodec {
                outbytes.length >= b.length);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testCodecInitWithCompressionLevel() throws Exception {
     Configuration conf = new Configuration();
     conf.setBoolean(CommonConfigurationKeys.IO_NATIVE_LIB_AVAILABLE_KEY, true);
@@ -424,7 +492,7 @@ public class TestCodec {
                          "org.apache.hadoop.io.compress.DefaultCodec");
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testCodecPoolCompressorReinit() throws Exception {
     Configuration conf = new Configuration();
     conf.setBoolean(CommonConfigurationKeys.IO_NATIVE_LIB_AVAILABLE_KEY, true);
@@ -439,14 +507,14 @@ public class TestCodec {
     gzipReinitTest(conf, dfc);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testSequenceFileDefaultCodec() throws IOException, ClassNotFoundException,
       InstantiationException, IllegalAccessException {
     sequenceFileCodecTest(conf, 100, "org.apache.hadoop.io.compress.DefaultCodec", 100);
     sequenceFileCodecTest(conf, 200000, "org.apache.hadoop.io.compress.DefaultCodec", 1000000);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testSequenceFileBZip2Codec() throws IOException, ClassNotFoundException,
       InstantiationException, IllegalAccessException {
     sequenceFileCodecTest(conf, 0, "org.apache.hadoop.io.compress.BZip2Codec", 100);
@@ -454,13 +522,14 @@ public class TestCodec {
     sequenceFileCodecTest(conf, 200000, "org.apache.hadoop.io.compress.BZip2Codec", 1000000);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testSequenceFileDeflateCodec() throws IOException, ClassNotFoundException,
       InstantiationException, IllegalAccessException {
     sequenceFileCodecTest(conf, 100, "org.apache.hadoop.io.compress.DeflateCodec", 100);
     sequenceFileCodecTest(conf, 200000, "org.apache.hadoop.io.compress.DeflateCodec", 1000000);
   }
 
+  @SuppressWarnings("deprecation")
   private static void sequenceFileCodecTest(Configuration conf, int lines, 
                                 String codecClass, int blockSize) 
     throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -472,9 +541,24 @@ public class TestCodec {
     // Create the SequenceFile
     FileSystem fs = FileSystem.get(conf);
     LOG.info("Creating SequenceFile with codec \"" + codecClass + "\"");
+
+    CompressionCodec codec = (CompressionCodec)Class.forName(codecClass).newInstance();
+
+    if(codec instanceof AESCodec){
+      CryptoContext cryptoContext = new CryptoContext();
+
+      Key key = null;
+      try {
+        key = Key.derive("123456");
+      } catch (CryptoException e) {
+        throw new IOException(e);
+      }
+      cryptoContext.setKey(key);
+      ((AESCodec)codec).setCryptoContext(cryptoContext);
+    }
+
     SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, filePath, 
-        Text.class, Text.class, CompressionType.BLOCK, 
-        (CompressionCodec)Class.forName(codecClass).newInstance());
+        Text.class, Text.class, CompressionType.BLOCK, codec);
     
     // Write some data
     LOG.info("Writing to SequenceFile...");
@@ -487,7 +571,21 @@ public class TestCodec {
     
     // Read the data back and check
     LOG.info("Reading from the SequenceFile...");
-    SequenceFile.Reader reader = new SequenceFile.Reader(fs, filePath, conf);
+    SequenceFile.Reader reader = null;
+    if(codec instanceof AESCodec){
+      CryptoContext cryptoContext = new CryptoContext();
+
+      Key key = null;
+      try {
+        key = Key.derive("123456");
+      } catch (CryptoException e) {
+        throw new IOException(e);
+      }
+      cryptoContext.setKey(key);
+      reader = new SequenceFile.Reader(fs, filePath, conf, cryptoContext);
+    } else {
+      reader = new SequenceFile.Reader(fs, filePath, conf);
+    }
     
     Writable key = (Writable)reader.getKeyClass().newInstance();
     Writable value = (Writable)reader.getValueClass().newInstance();
@@ -514,7 +612,7 @@ public class TestCodec {
    * Regression test for HADOOP-8423: seeking in a block-compressed
    * stream would not properly reset the block decompressor state.
    */
-  @Test
+  @Test(timeout=30000)
   public void testSnappyMapFile() throws Exception {
     Assume.assumeTrue(SnappyCodec.isNativeCodeLoaded());
     codecTestMapFile(SnappyCodec.class, CompressionType.BLOCK, 100);
@@ -580,7 +678,7 @@ public class TestCodec {
     codecTest(conf, seed, count, codecClass);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testGzipCompatibility() throws IOException {
     Random r = new Random();
     long seed = r.nextLong();
@@ -648,14 +746,14 @@ public class TestCodec {
     assertArrayEquals(chk, dflchk);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testBuiltInGzipConcat() throws IOException {
     Configuration conf = new Configuration();
     conf.setBoolean(CommonConfigurationKeys.IO_NATIVE_LIB_AVAILABLE_KEY, false);
     GzipConcatTest(conf, BuiltInGzipDecompressor.class);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testNativeGzipConcat() throws IOException {
     Configuration conf = new Configuration();
     conf.setBoolean(CommonConfigurationKeys.IO_NATIVE_LIB_AVAILABLE_KEY, true);
@@ -666,7 +764,7 @@ public class TestCodec {
     GzipConcatTest(conf, GzipCodec.GzipZlibDecompressor.class);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testGzipCodecRead() throws IOException {
     // Create a gzipped file and try to read it back, using a decompressor
     // from the CodecPool.
@@ -719,7 +817,7 @@ public class TestCodec {
     }
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testGzipLongOverflow() throws IOException {
     LOG.info("testGzipLongOverflow");
 
@@ -768,6 +866,7 @@ public class TestCodec {
     br.close();
   }
 
+  @Test(timeout=30000)
   public void testGzipCodecWrite(boolean useNative) throws IOException {
     // Create a gzipped file using a compressor from the CodecPool,
     // and try to read it back via the regular GZIPInputStream.
@@ -829,16 +928,17 @@ public class TestCodec {
     verifyGzipFile(fileName, msg);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testGzipCodecWriteJava() throws IOException {
     testGzipCodecWrite(false);
   }
 
-  @Test
+  @Test(timeout=30000)
   public void testGzipNativeCodecWrite() throws IOException {
     testGzipCodecWrite(true);
   }
 
+  @Test(timeout=30000)
   public void testCodecPoolAndGzipDecompressor() {
     // BuiltInZlibInflater should not be used as the GzipCodec decompressor.
     // Assert that this is the case.
