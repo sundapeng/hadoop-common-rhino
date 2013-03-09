@@ -15,26 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-option java_package = "org.apache.hadoop.ipc.protobuf";
-option java_outer_classname = "TestRpcServiceProtos";
-option java_generic_services = true;
-option java_generate_equals_and_hash = true;
-package hadoop.common;
 
-import "test.proto";
+#if !defined ORG_APACHE_HADOOP_IO_COMPRESS_BZIP2_BZIP2_H
+#define ORG_APACHE_HADOOP_IO_COMPRESS_BZIP2_BZIP2_H
+
+#include <config.h>
+#include <stddef.h>
+#include <bzlib.h>
+#include <dlfcn.h>
+#include <jni.h>
+
+#include "org_apache_hadoop.h"
+
+#define HADOOP_BZIP2_LIBRARY "libbz2.so.1"
 
 
-/**
- * A protobuf service for use in tests
- */
-service TestProtobufRpcProto {
-  rpc ping(EmptyRequestProto) returns (EmptyResponseProto);
-  rpc echo(EchoRequestProto) returns (EchoResponseProto);
-  rpc error(EmptyRequestProto) returns (EmptyResponseProto);
-  rpc error2(EmptyRequestProto) returns (EmptyResponseProto);
-}
+/* A helper macro to convert the java 'stream-handle' to a bz_stream pointer. */
+#define BZSTREAM(stream) ((bz_stream*)((ptrdiff_t)(stream)))
 
-service TestProtobufRpc2Proto {
-  rpc ping2(EmptyRequestProto) returns (EmptyResponseProto);
-  rpc echo2(EchoRequestProto) returns (EchoResponseProto);
-}
+/* A helper macro to convert the bz_stream pointer to the java 'stream-handle'. */
+#define JLONG(stream) ((jlong)((ptrdiff_t)(stream)))
+
+#endif //ORG_APACHE_HADOOP_IO_COMPRESS_BZIP2_BZIP2_H
