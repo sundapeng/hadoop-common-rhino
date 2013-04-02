@@ -8,6 +8,9 @@ Release 2.0.5-beta - UNRELEASED
 
     HADOOP-9283. Add support for running the Hadoop client on AIX. (atm)
 
+    HADOOP-8415. Add getDouble() and setDouble() in 
+    org.apache.hadoop.conf.Configuration (Jan van der Lugt via harsh)
+
   IMPROVEMENTS
 
     HADOOP-9253. Capture ulimit info in the logs at service start time.
@@ -28,7 +31,12 @@ Release 2.0.5-beta - UNRELEASED
     HADOOP-9318. When exiting on a signal, print the signal name first. (Colin
     Patrick McCabe via atm)
 
+    HADOOP-9358. "Auth failed" log should include exception string (todd)
+
   OPTIMIZATIONS
+
+    HADOOP-9150. Avoid unnecessary DNS resolution attempts for logical URIs
+    (todd)
 
   BUG FIXES
 
@@ -85,8 +93,16 @@ Release 2.0.5-beta - UNRELEASED
     HADOOP-9407. commons-daemon 1.0.3 dependency has bad group id causing
     build issues. (Sangjin Lee via suresh)
 
-    HADOOP-9299.  kerberos name resolution is kicking in even when kerberos
-    is not configured (daryn)
+    HADOOP-9405. TestGridmixSummary#testExecutionSummarizer is broken. (Andrew
+    Wang via atm)
+
+    HADOOP-9430. TestSSLFactory fails on IBM JVM. (Amir Sanjar via suresh)
+
+    HADOOP-9125. LdapGroupsMapping threw CommunicationException after some
+    idle time. (Kai Zheng via atm)
+
+    HADOOP-9357. Fallback to default authority if not specified in FileContext.
+    (Andrew Wang via eli)
 
 Release 2.0.4-alpha - UNRELEASED
 
@@ -102,7 +118,17 @@ Release 2.0.4-alpha - UNRELEASED
 
     HADOOP-9406. hadoop-client leaks dependency on JDK tools jar. (tucu)
 
-    HADOOP-9301. hadoop client servlet/jsp/jetty/tomcat JARs creating conflicts in Oozie & HttpFS. (tucu)
+    HADOOP-9301. hadoop client servlet/jsp/jetty/tomcat JARs creating
+    conflicts in Oozie & HttpFS. (tucu)
+
+    HADOOP-9299.  kerberos name resolution is kicking in even when kerberos
+    is not configured (daryn)
+
+    HADOOP-9408. misleading description for net.topology.table.file.name
+    property in core-default.xml. (rajeshbabu via suresh)
+
+    HADOOP-9444. Modify hadoop-policy.xml to replace unexpanded variables to a
+    default value of '*'. (Roman Shaposhnik via vinodkv)
 
 Release 2.0.3-alpha - 2013-02-06 
 
