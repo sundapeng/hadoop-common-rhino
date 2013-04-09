@@ -33,6 +33,9 @@ Release 2.0.5-beta - UNRELEASED
 
     HADOOP-9358. "Auth failed" log should include exception string (todd)
 
+    HADOOP-9401. CodecPool: Add counters for number of (de)compressors 
+    leased out. (kkambatl via tucu)
+
   OPTIMIZATIONS
 
     HADOOP-9150. Avoid unnecessary DNS resolution attempts for logical URIs
@@ -103,6 +106,9 @@ Release 2.0.5-beta - UNRELEASED
 
     HADOOP-9357. Fallback to default authority if not specified in FileContext.
     (Andrew Wang via eli)
+
+    HADOOP-9429. TestConfiguration fails with IBM JAVA. (Amir Sanjar via
+    suresh)
 
 Release 2.0.4-alpha - UNRELEASED
 

@@ -34,7 +34,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +63,7 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hadoop.util.DiskChecker;
 import org.apache.hadoop.yarn.YarnException;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -79,10 +79,12 @@ import org.apache.hadoop.yarn.server.nodemanager.ContainerExecutor;
 import org.apache.hadoop.yarn.server.nodemanager.DeletionService;
 import org.apache.hadoop.yarn.server.nodemanager.LocalDirsHandlerService;
 import org.apache.hadoop.yarn.server.nodemanager.api.LocalizationProtocol;
+import org.apache.hadoop.yarn.server.nodemanager.api.ResourceLocalizationSpec;
 import org.apache.hadoop.yarn.server.nodemanager.api.protocolrecords.LocalResourceStatus;
 import org.apache.hadoop.yarn.server.nodemanager.api.protocolrecords.LocalizerAction;
 import org.apache.hadoop.yarn.server.nodemanager.api.protocolrecords.LocalizerHeartbeatResponse;
 import org.apache.hadoop.yarn.server.nodemanager.api.protocolrecords.LocalizerStatus;
+import org.apache.hadoop.yarn.server.nodemanager.api.protocolrecords.ResourceStatusType;
 import org.apache.hadoop.yarn.server.nodemanager.containermanager.application.Application;
 import org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationEvent;
 import org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationEventType;
@@ -104,6 +106,7 @@ import org.apache.hadoop.yarn.server.nodemanager.containermanager.localizer.even
 import org.apache.hadoop.yarn.server.nodemanager.containermanager.localizer.event.ResourceRequestEvent;
 import org.apache.hadoop.yarn.server.nodemanager.containermanager.localizer.security.LocalizerTokenSecretManager;
 import org.apache.hadoop.yarn.server.nodemanager.security.authorize.NMPolicyProvider;
+import org.apache.hadoop.yarn.server.nodemanager.util.NodeManagerBuilderUtils;
 import org.apache.hadoop.yarn.service.AbstractService;
 import org.apache.hadoop.yarn.service.CompositeService;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -130,7 +133,7 @@ public class ResourceLocalizationService extends CompositeService
   private RecordFactory recordFactory;
   private final ScheduledExecutorService cacheCleanup;
 
-  private final LocalResourcesTracker publicRsrc;
+  private LocalResourcesTracker publicRsrc;
 
   private LocalDirsHandlerService dirsHandler;
 
@@ -158,7 +161,6 @@ public class ResourceLocalizationService extends CompositeService
     this.delService = delService;
     this.dirsHandler = dirsHandler;
 
-    this.publicRsrc = new LocalResourcesTrackerImpl(null, dispatcher);
     this.cacheCleanup = new ScheduledThreadPoolExecutor(1,
         new ThreadFactoryBuilder()
           .setNameFormat("ResourceLocalizationService Cache Cleanup")
@@ -173,8 +175,26 @@ public class ResourceLocalizationService extends CompositeService
     }
   }
 
+  private void validateConf(Configuration conf) {
+    int perDirFileLimit =
+        conf.getInt(YarnConfiguration.NM_LOCAL_CACHE_MAX_FILES_PER_DIRECTORY,
+          YarnConfiguration.DEFAULT_NM_LOCAL_CACHE_MAX_FILES_PER_DIRECTORY);
+    if (perDirFileLimit <= 36) {
+      LOG.error(YarnConfiguration.NM_LOCAL_CACHE_MAX_FILES_PER_DIRECTORY
+          + " parameter is configured with very low value.");
+      throw new YarnException(
+        YarnConfiguration.NM_LOCAL_CACHE_MAX_FILES_PER_DIRECTORY
+            + " parameter is configured with a value less than 37.");
+    } else {
+      LOG.info("per directory file limit = " + perDirFileLimit);
+    }
+  }
+
   @Override
   public void init(Configuration conf) {
+    this.validateConf(conf);
+    this.publicRsrc =
+        new LocalResourcesTrackerImpl(null, dispatcher, true, conf);
     this.recordFactory = RecordFactoryProvider.getRecordFactory(conf);
 
     try {
@@ -212,6 +232,7 @@ public class ResourceLocalizationService extends CompositeService
         YarnConfiguration.NM_LOCALIZER_ADDRESS,
         YarnConfiguration.DEFAULT_NM_LOCALIZER_ADDRESS,
         YarnConfiguration.DEFAULT_NM_LOCALIZER_PORT);
+
     localizerTracker = createLocalizerTracker(conf);
     addService(localizerTracker);
     dispatcher.register(LocalizerEventType.class, localizerTracker);
@@ -306,15 +327,17 @@ public class ResourceLocalizationService extends CompositeService
   private void handleInitApplicationResources(Application app) {
     // 0) Create application tracking structs
     String userName = app.getUser();
-    privateRsrc.putIfAbsent(userName,
-        new LocalResourcesTrackerImpl(userName, dispatcher));
-    if (null != appRsrc.putIfAbsent(ConverterUtils.toString(app.getAppId()),
-        new LocalResourcesTrackerImpl(app.getUser(), dispatcher))) {
+    privateRsrc.putIfAbsent(userName, new LocalResourcesTrackerImpl(userName,
+      dispatcher, true, super.getConfig()));
+    if (null != appRsrc.putIfAbsent(
+      ConverterUtils.toString(app.getAppId()),
+      new LocalResourcesTrackerImpl(app.getUser(), dispatcher, false, super
+        .getConfig()))) {
       LOG.warn("Initializing application " + app + " already present");
       assert false; // TODO: FIXME assert doesn't help
                     // ^ The condition is benign. Tests should fail and it
-                    //   should appear in logs, but it's an internal error
-                    //   that should have no effect on applications
+                    // should appear in logs, but it's an internal error
+                    // that should have no effect on applications
     }
     // 1) Signal container init
     //
@@ -453,6 +476,21 @@ public class ResourceLocalizationService extends CompositeService
       case APPLICATION:
         return appRsrc.get(ConverterUtils.toString(appId));
     }
+  }
+
+  private String getUserFileCachePath(String user) {
+    String path =
+        "." + Path.SEPARATOR + ContainerLocalizer.USERCACHE + Path.SEPARATOR
+            + user + Path.SEPARATOR + ContainerLocalizer.FILECACHE;
+    return path;
+  }
+
+  private String getUserAppCachePath(String user, String appId) {
+    String path =
+        "." + Path.SEPARATOR + ContainerLocalizer.USERCACHE + Path.SEPARATOR
+            + user + Path.SEPARATOR + ContainerLocalizer.APPCACHE
+            + Path.SEPARATOR + appId;
+    return path;
   }
 
   /**
@@ -620,8 +658,18 @@ public class ResourceLocalizationService extends CompositeService
             Path publicDirDestPath = dirsHandler.getLocalPathForWrite(
                 "." + Path.SEPARATOR + ContainerLocalizer.FILECACHE,
                 ContainerLocalizer.getEstimatedSize(resource), true);
+            Path hierarchicalPath =
+              publicRsrc.getPathForLocalization(key, publicDirDestPath);
+            if (!hierarchicalPath.equals(publicDirDestPath)) {
+              publicDirDestPath = hierarchicalPath;
+              DiskChecker.checkDir(
+                new File(publicDirDestPath.toUri().getPath()));
+            }
+            publicDirDestPath =
+                new Path(publicDirDestPath, Long.toString(publicRsrc
+                  .nextUniqueNumber()));
             pending.put(queue.submit(new FSDownload(
-                lfs, null, conf, publicDirDestPath, resource, new Random())),
+                lfs, null, conf, publicDirDestPath, resource)),
                 request);
             attempts.put(key, new LinkedList<LocalizerResourceRequestEvent>());
           } catch (IOException e) {
@@ -654,19 +702,21 @@ public class ResourceLocalizationService extends CompositeService
               assoc.getResource().handle(
                   new ResourceLocalizedEvent(key,
                     local, FileUtil.getDU(new File(local.toUri()))));
+              publicRsrc.localizationCompleted(key, true);
               synchronized (attempts) {
                 attempts.remove(key);
               }
             } catch (ExecutionException e) {
               LOG.info("Failed to download rsrc " + assoc.getResource(),
                   e.getCause());
+              LocalResourceRequest req = assoc.getResource().getRequest();
               dispatcher.getEventHandler().handle(
                   new ContainerResourceFailedEvent(
                     assoc.getContext().getContainerId(),
-                    assoc.getResource().getRequest(), e.getCause()));
+                    req, e.getCause()));
+              publicRsrc.localizationCompleted(req, false);
               List<LocalizerResourceRequestEvent> reqs;
               synchronized (attempts) {
-                LocalResourceRequest req = assoc.getResource().getRequest();
                 reqs = attempts.get(req);
                 if (null == reqs) {
                   LOG.error("Missing pending list for " + req);
@@ -773,7 +823,20 @@ public class ResourceLocalizationService extends CompositeService
         LocalResource next = findNextResource();
         if (next != null) {
           response.setLocalizerAction(LocalizerAction.LIVE);
-          response.addResource(next);
+          try {
+            ArrayList<ResourceLocalizationSpec> rsrcs =
+                new ArrayList<ResourceLocalizationSpec>();
+            ResourceLocalizationSpec rsrc =
+                NodeManagerBuilderUtils.newResourceLocalizationSpec(next,
+                  getPathForLocalization(next));
+            rsrcs.add(rsrc);
+            response.setResourceSpecs(rsrcs);
+          } catch (IOException e) {
+            LOG.error("local path for PRIVATE localization could not be found."
+                + "Disks might have failed.", e);
+          } catch (URISyntaxException e) {
+            // TODO fail? Already translated several times...
+          }
         } else if (pending.isEmpty()) {
           // TODO: Synchronization
           response.setLocalizerAction(LocalizerAction.DIE);
@@ -782,7 +845,8 @@ public class ResourceLocalizationService extends CompositeService
         }
         return response;
       }
-
+      ArrayList<ResourceLocalizationSpec> rsrcs =
+          new ArrayList<ResourceLocalizationSpec>();
       for (LocalResourceStatus stat : remoteResourceStatuses) {
         LocalResource rsrc = stat.getResource();
         LocalResourceRequest req = null;
@@ -805,6 +869,7 @@ public class ResourceLocalizationService extends CompositeService
                   new ResourceLocalizedEvent(req,
                     ConverterUtils.getPathFromYarnURL(stat.getLocalPath()),
                     stat.getLocalSize()));
+              localizationCompleted(stat);
             } catch (URISyntaxException e) { }
             if (pending.isEmpty()) {
               // TODO: Synchronization
@@ -814,7 +879,17 @@ public class ResourceLocalizationService extends CompositeService
             response.setLocalizerAction(LocalizerAction.LIVE);
             LocalResource next = findNextResource();
             if (next != null) {
-              response.addResource(next);
+              try {
+                ResourceLocalizationSpec resource =
+                    NodeManagerBuilderUtils.newResourceLocalizationSpec(next,
+                      getPathForLocalization(next));
+                rsrcs.add(resource);
+              } catch (IOException e) {
+                LOG.error("local path for PRIVATE localization could not be " +
+                  "found. Disks might have failed.", e);
+              } catch (URISyntaxException e) {
+                  //TODO fail? Already translated several times...
+              }
             }
             break;
           case FETCH_PENDING:
@@ -824,6 +899,7 @@ public class ResourceLocalizationService extends CompositeService
             LOG.info("DEBUG: FAILED " + req, stat.getException());
             assoc.getResource().unlock();
             response.setLocalizerAction(LocalizerAction.DIE);
+            localizationCompleted(stat);
             // TODO: Why is this event going directly to the container. Why not
             // the resource itself? What happens to the resource? Is it removed?
             dispatcher.getEventHandler().handle(
@@ -839,7 +915,51 @@ public class ResourceLocalizationService extends CompositeService
             break;
         }
       }
+      response.setResourceSpecs(rsrcs);
       return response;
+    }
+
+    private void localizationCompleted(LocalResourceStatus stat) {
+      try {
+        LocalResource rsrc = stat.getResource();
+        LocalResourceRequest key = new LocalResourceRequest(rsrc);
+        String user = context.getUser();
+        ApplicationId appId =
+            context.getContainerId().getApplicationAttemptId()
+              .getApplicationId();
+        LocalResourceVisibility vis = rsrc.getVisibility();
+        LocalResourcesTracker tracker =
+            getLocalResourcesTracker(vis, user, appId);
+        if (stat.getStatus() == ResourceStatusType.FETCH_SUCCESS) {
+          tracker.localizationCompleted(key, true);
+        } else {
+          tracker.localizationCompleted(key, false);
+        }
+      } catch (URISyntaxException e) {
+        LOG.error("Invalid resource URL specified", e);
+      }
+    }
+
+    private Path getPathForLocalization(LocalResource rsrc) throws IOException,
+        URISyntaxException {
+      String user = context.getUser();
+      ApplicationId appId =
+          context.getContainerId().getApplicationAttemptId().getApplicationId();
+      LocalResourceVisibility vis = rsrc.getVisibility();
+      LocalResourcesTracker tracker =
+          getLocalResourcesTracker(vis, user, appId);
+      String cacheDirectory = null;
+      if (vis == LocalResourceVisibility.PRIVATE) {// PRIVATE Only
+        cacheDirectory = getUserFileCachePath(user);
+      } else {// APPLICATION ONLY
+        cacheDirectory = getUserAppCachePath(user, appId.toString());
+      }
+      Path dirPath =
+          dirsHandler.getLocalPathForWrite(cacheDirectory,
+            ContainerLocalizer.getEstimatedSize(rsrc), false);
+      dirPath = tracker.getPathForLocalization(new LocalResourceRequest(rsrc),
+        dirPath);
+      return new Path (dirPath, Long.toString(tracker.nextUniqueNumber()));
     }
 
     @Override

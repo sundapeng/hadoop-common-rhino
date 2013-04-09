@@ -6,6 +6,9 @@ Release 2.0.5-beta - UNRELEASED
 
   NEW FEATURES
 
+    HDFS-1804. Add a new block-volume device choosing policy that looks at
+    free space. (atm)
+
   IMPROVEMENTS
 
     HDFS-4222. NN is unresponsive and loses heartbeats from DNs when 
@@ -34,6 +37,12 @@ Release 2.0.5-beta - UNRELEASED
     HDFS-4621. Additional logging to help diagnose slow QJM syncs. (todd)
 
     HDFS-4618. Default transaction interval for checkpoints is too low. (todd)
+
+    HDFS-4525. Provide an API for knowing that whether file is closed or not. 
+    (SreeHari via umamahesh)
+
+    HDFS-3940. Add Gset#clear method and clear the block map when namenode is
+    shutdown. (suresh)
 
   OPTIMIZATIONS
 
@@ -122,6 +131,20 @@ Release 2.0.5-beta - UNRELEASED
 
     HDFS-4658. Standby NN will log that it has received a block report "after
     becoming active" (atm)
+
+    HDFS-4646. createNNProxyWithClientProtocol ignores configured timeout
+    value (Jagane Sundar via cos)
+
+    HDFS-3981. Fix handling of FSN lock in getBlockLocations. (Xiaobo Peng
+    and todd via todd)
+
+    HDFS-4676. TestHDFSFileSystemContract should set MiniDFSCluster variable
+    to null to free up memory. (suresh)
+
+    HDFS-4669. TestBlockPoolManager fails using IBM java. (Tian Hong Wang via
+    suresh)
+
+    HDFS-4643. Fix flakiness in TestQuorumJournalManager. (todd)
 
 Release 2.0.4-alpha - UNRELEASED
 
@@ -2217,6 +2240,8 @@ Release 0.23.7 - UNRELEASED
     Kochar via kihwal)
 
     HDFS-4649. Webhdfs cannot list large directories (daryn via kihwal)
+
+    HDFS-4548. Webhdfs doesn't renegotiate SPNEGO token (daryn via kihwal)
 
 Release 0.23.6 - UNRELEASED
 

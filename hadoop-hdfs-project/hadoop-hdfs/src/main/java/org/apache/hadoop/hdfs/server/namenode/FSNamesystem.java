@@ -1329,14 +1329,14 @@ public class FSNamesystem implements Namesystem, FSClusterStats,
         long now = now();
         final INodeFile inode = INodeFile.valueOf(dir.getINode(src), src);
         if (doAccessTime && isAccessTimeSupported()) {
-          if (now <= inode.getAccessTime() + getAccessTimePrecision()) {
+          if (now > inode.getAccessTime() + getAccessTimePrecision()) {
             // if we have to set access time but we only have the readlock, then
             // restart this entire operation with the writeLock.
             if (isReadOp) {
               continue;
             }
+            dir.setTimes(src, inode, -1, now, false);
           }
-          dir.setTimes(src, inode, -1, now, false);
         }
         return blockManager.createLocatedBlocks(inode.getBlocks(),
             inode.computeFileSize(false), inode.isUnderConstruction(),
@@ -2903,6 +2903,33 @@ public class FSNamesystem implements Namesystem, FSClusterStats,
     }
     logAuditEvent(true, "getfileinfo", src);
     return stat;
+  }
+  
+  /**
+   * Returns true if the file is closed
+   */
+  boolean isFileClosed(String src) 
+      throws AccessControlException, UnresolvedLinkException,
+      StandbyException, IOException {
+    FSPermissionChecker pc = getPermissionChecker();	
+    checkOperation(OperationCategory.READ);
+    readLock();
+    try {
+      checkOperation(OperationCategory.READ);
+      if (isPermissionEnabled) {
+        checkTraverse(pc, src);
+      }
+      return !INodeFile.valueOf(dir.getINode(src), src).isUnderConstruction();
+    } catch (AccessControlException e) {
+      if (isAuditEnabled() && isExternalInvocation()) {
+        logAuditEvent(false, UserGroupInformation.getCurrentUser(),
+                      getRemoteIp(),
+                      "isFileClosed", src, null, null);
+      }
+      throw e;
+    } finally {
+      readUnlock();
+    }
   }
 
   /**
@@ -4724,8 +4751,15 @@ public class FSNamesystem implements Namesystem, FSClusterStats,
    * shutdown FSNamesystem
    */
   void shutdown() {
-    if (mbeanName != null)
+    if (mbeanName != null) {
       MBeans.unregister(mbeanName);
+    }
+    if (dir != null) {
+      dir.shutdown();
+    }
+    if (blockManager != null) {
+      blockManager.shutdown();
+    }
   }
   
 

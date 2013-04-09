@@ -70,9 +70,6 @@ Release 2.0.5-beta - UNRELEASED
     MAPREDUCE-3872. Fix an event handling races in ContainerLauncherImpl.
     (Robert Kanter via sseth)
 
-    MAPREDUCE-5083. MiniMRCluster should use a random component when creating an
-    actual cluster (Siddharth Seth via hitesh)
-
     MAPREDUCE-5062. Fix MR AM to read max-retries from the RM. (Zhijie Shen via
     vinodkv)
 
@@ -113,6 +110,9 @@ Release 2.0.5-beta - UNRELEASED
     MAPREDUCE-5006. Fix failing streaming tests due to MAPREDUCE-4994.
     (Sandy Ryza via tomwhite)
 
+    MAPREDUCE-5086. MR app master deletes staging dir when sent a reboot
+    command from the RM. (Jian He via jlowe)
+
 Release 2.0.4-alpha - UNRELEASED
 
   INCOMPATIBLE CHANGES
@@ -121,9 +121,25 @@ Release 2.0.4-alpha - UNRELEASED
 
   IMPROVEMENTS
 
+    MAPREDUCE-5129. Allow tags to JobHistory for deeper analytics. (billie via
+    acmurthy)
+
   OPTIMIZATIONS
 
   BUG FIXES
+
+    MAPREDUCE-5088. MR Client gets an renewer token exception while Oozie is
+    submitting a job (Daryn Sharp via cos)
+
+    MAPREDUCE-5117. Changed MRClientProtocolPBClientImpl to be closeable and thus
+    fix failures in renewal of HistoryServer's delegations tokens. (Siddharth
+    Seth via vinodkv)
+
+    MAPREDUCE-5083. MiniMRCluster should use a random component when creating an
+    actual cluster (Siddharth Seth via hitesh)
+
+    MAPREDUCE-5138. Fix LocalDistributedCacheManager after YARN-112. (Omkar Vinit
+    Joshi via vinodkv)
 
 Release 2.0.3-alpha - 2013-02-06 
 
@@ -707,6 +723,11 @@ Release 0.23.7 - UNRELEASED
 
     MAPREDUCE-5053. java.lang.InternalError from decompression codec cause
     reducer to fail (Robert Parker via jeagles)
+
+    MAPREDUCE-4991. coverage for gridmix (Aleksey Gorshkov via tgraves)
+
+    MAPREDUCE-5007. fix coverage org.apache.hadoop.mapreduce.v2.hs (Aleksey
+    Gorshkov via tgraves)
 
 Release 0.23.6 - UNRELEASED
 
