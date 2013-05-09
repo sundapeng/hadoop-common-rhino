@@ -48,11 +48,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -113,6 +115,42 @@ import com.google.common.annotations.VisibleForTesting;
 public abstract class Server {
   private final boolean authorize;
   private EnumSet<AuthMethod> enabledAuthMethods;
+  private ExceptionsHandler exceptionsHandler = new ExceptionsHandler();
+  
+  public void addTerseExceptions(Class<?>... exceptionClass) {
+    exceptionsHandler.addTerseExceptions(exceptionClass);
+  }
+
+  /**
+   * ExceptionsHandler manages Exception groups for special handling
+   * e.g., terse exception group for concise logging messages
+   */
+  static class ExceptionsHandler {
+    private volatile Set<String> terseExceptions = new HashSet<String>();
+
+    /**
+     * Add exception class so server won't log its stack trace.
+     * Modifying the terseException through this method is thread safe.
+     *
+     * @param exceptionClass exception classes 
+     */
+    void addTerseExceptions(Class<?>... exceptionClass) {
+
+      // Make a copy of terseException for performing modification
+      final HashSet<String> newSet = new HashSet<String>(terseExceptions);
+
+      // Add all class names into the HashSet
+      for (Class<?> name : exceptionClass) {
+        newSet.add(name.toString());
+      }
+      // Replace terseException set
+      terseExceptions = Collections.unmodifiableSet(newSet);
+    }
+
+    boolean isTerse(Class<?> t) {
+      return terseExceptions.contains(t.toString());
+    }
+  }
   
   /**
    * The first four bytes of Hadoop RPC connections
@@ -391,6 +429,11 @@ public abstract class Server {
   @VisibleForTesting
   Iterable<? extends Thread> getHandlers() {
     return Arrays.asList(handlers);
+  }
+
+  @VisibleForTesting
+  List<Connection> getConnections() {
+    return connectionList;
   }
 
   /**
@@ -1059,6 +1102,7 @@ public abstract class Server {
     private ByteBuffer connectionHeaderBuf = null;
     private ByteBuffer unwrappedData;
     private ByteBuffer unwrappedDataLengthBuffer;
+    private int serviceClass;
     
     UserGroupInformation user = null;
     public UserGroupInformation attemptingUser = null; // user name before auth
@@ -1270,14 +1314,17 @@ public abstract class Server {
         if (!connectionHeaderRead) {
           //Every connection is expected to send the header.
           if (connectionHeaderBuf == null) {
-            connectionHeaderBuf = ByteBuffer.allocate(3);
+            connectionHeaderBuf = ByteBuffer.allocate(4);
           }
           count = channelRead(channel, connectionHeaderBuf);
           if (count < 0 || connectionHeaderBuf.remaining() > 0) {
             return count;
           }
           int version = connectionHeaderBuf.get(0);
-          byte[] method = new byte[] {connectionHeaderBuf.get(1)};
+          // TODO we should add handler for service class later
+          this.setServiceClass(connectionHeaderBuf.get(1));
+
+          byte[] method = new byte[] {connectionHeaderBuf.get(2)};
           authMethod = AuthMethod.read(new DataInputStream(
               new ByteArrayInputStream(method)));
           dataLengthBuffer.flip();
@@ -1301,7 +1348,7 @@ public abstract class Server {
           }
           
           IpcSerializationType serializationType = IpcSerializationType
-              .fromByte(connectionHeaderBuf.get(2));
+              .fromByte(connectionHeaderBuf.get(3));
           if (serializationType != IpcSerializationType.PROTOBUF) {
             respondUnsupportedSerialization(serializationType);
             return -1;
@@ -1685,6 +1732,22 @@ public abstract class Server {
       return true;
     }
     
+    /**
+     * Get service class for connection
+     * @return the serviceClass
+     */
+    public int getServiceClass() {
+      return serviceClass;
+    }
+
+    /**
+     * Set service class for connection
+     * @param serviceClass the serviceClass to set
+     */
+    public void setServiceClass(int serviceClass) {
+      this.serviceClass = serviceClass;
+    }
+
     private synchronized void close() throws IOException {
       disposeSasl();
       data = null;
@@ -1756,8 +1819,8 @@ public abstract class Server {
               // on the server side, as opposed to just a normal exceptional
               // result.
               LOG.warn(logMsg, e);
-            } else if (e instanceof StandbyException) {
-              // Don't log the whole stack trace of these exceptions.
+            } else if (exceptionsHandler.isTerse(e.getClass())) {
+             // Don't log the whole stack trace of these exceptions.
               // Way too noisy!
               LOG.info(logMsg);
             } else {
@@ -1898,6 +1961,8 @@ public abstract class Server {
     if (secretManager != null) {
       SaslRpcServer.init(conf);
     }
+    
+    this.exceptionsHandler.addTerseExceptions(StandbyException.class);
   }
 
   // get the security type from the conf. implicitly include token support
