@@ -35,9 +35,12 @@ import org.apache.hadoop.io.compress.SplitCompressionInputStream;
 import org.apache.hadoop.io.compress.SplittableCompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.Decompressor;
+import org.apache.hadoop.io.crypto.CryptoCodec;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.cryptocontext.CryptoContextHelper;
 import org.apache.hadoop.util.LineReader;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
@@ -80,6 +83,11 @@ public class LineRecordReader extends RecordReader<LongWritable, Text> {
     start = split.getStart();
     end = start + split.getLength();
     final Path file = split.getPath();
+
+    if(codec instanceof CryptoCodec &&
+        job instanceof JobConf) {
+      CryptoContextHelper.resetInputCryptoContext((CryptoCodec) codec, (JobConf)job, file);
+    }
 
     // open the file and seek to the start of the split
     final FileSystem fs = file.getFileSystem(job);
