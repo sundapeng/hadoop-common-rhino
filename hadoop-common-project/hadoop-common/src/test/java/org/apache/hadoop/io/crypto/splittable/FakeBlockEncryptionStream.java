@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,29 +16,23 @@
  * limitations under the License.
  */
 
-#include "org_apache_hadoop.h"
+package org.apache.hadoop.io.crypto.splittable;
 
-#ifdef UNIX
-#include "config.h"
-#endif // UNIX
+import java.io.IOException;
+import java.io.OutputStream;
 
-#include <jni.h>
+import org.apache.hadoop.io.crypto.splittable.BlockEncryptionStream;
+import org.apache.hadoop.io.crypto.splittable.BlockEncryptorWithCompressor;
 
-JNIEXPORT jboolean JNICALL Java_org_apache_hadoop_util_NativeCodeLoader_buildSupportsSnappy
-  (JNIEnv *env, jclass clazz)
-{
-#ifdef HADOOP_SNAPPY_LIBRARY
-  return JNI_TRUE;
-#else
-  return JNI_FALSE;
-#endif
+public class FakeBlockEncryptionStream extends BlockEncryptionStream {
 
-JNIEXPORT jboolean JNICALL Java_org_apache_hadoop_util_NativeCodeLoader_buildSupportsCrypto
-  (JNIEnv *env, jclass clazz)
-{
-#ifdef HADOOP_CRYPTO_LIBRARY
-  return JNI_TRUE;
-#else
-  return JNI_FALSE;
-#endif
+  public FakeBlockEncryptionStream(OutputStream out, 
+      BlockEncryptorWithCompressor encryptorWithCompressor, int blockSize){
+    super(out, encryptorWithCompressor, blockSize);
+  }
+
+  @Override
+  protected void writeAlgHeader() throws IOException {
+        
+  }
 }
