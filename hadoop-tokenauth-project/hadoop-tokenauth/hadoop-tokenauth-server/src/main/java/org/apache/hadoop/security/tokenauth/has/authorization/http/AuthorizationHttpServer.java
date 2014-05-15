@@ -20,6 +20,7 @@ package org.apache.hadoop.security.tokenauth.has.authorization.http;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 
 import javax.servlet.ServletContext;
 
@@ -28,7 +29,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.http.HttpConfig;
-import org.apache.hadoop.http.HttpServer;
+import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.tokenauth.api.web.WEBParams;
 import org.apache.hadoop.security.tokenauth.has.authorization.AuthorizationService;
@@ -41,7 +42,7 @@ public class AuthorizationHttpServer {
   public static final String AUTHORIZATION_ATTRIBUTE_KEY = "localauthorization";
   public static final String CURRENT_CONF = "current.conf";
   
-  private HttpServer httpServer;
+  private HttpServer2 httpServer;
   private final Configuration conf;
   private final AuthorizationService authorizationService;
   
@@ -55,8 +56,8 @@ public class AuthorizationHttpServer {
   
   public void start() throws IOException {
     final InetSocketAddress bindAddr = getAddress(conf);
-    httpServer = new HttpServer.Builder().setName("authorization")
-        .setBindAddress(bindAddr.getHostName()).setPort(bindAddr.getPort())
+    httpServer = new HttpServer2.Builder().setName("authorization")
+        .addEndpoint(URI.create("http://"+NetUtils.getHostPortString(bindAddr)))
         .setFindPort(false).setConf(conf).setSecurityEnabled(false).build();
     httpServer.setAttribute(AUTHORIZATION_ATTRIBUTE_KEY, authorizationService);
     httpServer.setAttribute(CURRENT_CONF, conf);
@@ -93,8 +94,11 @@ public class AuthorizationHttpServer {
   /**
    * Return the actual address bound to by the running server.
    */
+  @Deprecated
   public InetSocketAddress getAddress() {
-    InetSocketAddress addr = httpServer.getListenerAddress();
+    // Mark as deprecated because HttpServer2 can bind multiple endpoints.
+    // This method return the first address.
+    InetSocketAddress addr = httpServer.getConnectorAddress(0);
     assert addr.getPort() != 0;
     return addr;
   }
@@ -112,8 +116,10 @@ public class AuthorizationHttpServer {
   
   public static String getAccessTokenUrl(Configuration conf) {
     if (conf == null) conf = new Configuration();
-    return HttpConfig.isSecure() ? "https://" : "http://"
-      + getAuthorizationHttpServerAddress(conf) + WEBParams.AUTHORIZE_SERVLET_PATH_SPEC;
+    return conf
+        .get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_POLICY_KEY,
+            "HTTPS").equalsIgnoreCase("HTTPS") ? "https://" : "http://"
+        + getAuthorizationHttpServerAddress(conf) + WEBParams.AUTHORIZE_SERVLET_PATH_SPEC;
   }
   
   public static AuthorizationService getServiceFromContext(ServletContext context)

@@ -321,8 +321,8 @@ public final class HttpServer2 implements FilterContainer {
 
       if (this.securityEnabled) {
         if(UserGroupInformation.isTokenAuthEnabled()){
-          server.initTokenAuth(this.conf, this.tokenAuthUsernameConfKey, this.authnFileConfKey,
-              this.identityServerAddressKey, this.authorizationServerAddressKey);
+          server.initTokenAuth(conf, hostName, tokenAuthUsernameConfKey, authnFileConfKey,
+              identityServerAddressKey, authorizationServerAddressKey);
         } else {
           server.initSpnego(conf, hostName, usernameConfKey, keytabConfKey);
         }
@@ -823,19 +823,20 @@ public final class HttpServer2 implements FilterContainer {
                  AuthenticationFilter.class.getName(), params, null);
   }
   
-  protected void initTokenAuth(Configuration conf, 
+  protected void initTokenAuth(Configuration conf, String hostName,
       String usernameConfKey, String authnFileConfKey, String identityServerKey, String authrizationServerKey) throws IOException {
     Map<String, String> params = new HashMap<String, String>();
     String principalInConf = conf.get(usernameConfKey);
     if (principalInConf != null && !principalInConf.isEmpty()) {
       params.put("tokenauth.principal", 
-          SecurityUtil.getServerPrincipal(principalInConf, listener.getHost()));
+          SecurityUtil.getServerPrincipal(principalInConf, hostName));
     }
     String authnFile = conf.get(authnFileConfKey);
     if (authnFile != null && !authnFile.isEmpty()){
       params.put("tokenauth.authnfile", authnFile);
     }
-    params.put("tokenauth.http.secured", HttpConfig.isSecure() ? "true" : "false");
+    // HttpConfig.isSecure() is removed.
+    // params.put("tokenauth.http.secured", HttpConfig.isSecure() ? "true" : "false");
     params.put(AuthenticationFilter.AUTH_TYPE,
         TokenAuthAuthenticationHandler.class.getName());
     params.put("tokenauth.identity.server.http-address", conf.get(identityServerKey));

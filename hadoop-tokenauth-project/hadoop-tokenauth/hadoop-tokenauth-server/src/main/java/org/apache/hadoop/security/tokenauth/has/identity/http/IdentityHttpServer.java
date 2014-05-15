@@ -20,6 +20,7 @@ package org.apache.hadoop.security.tokenauth.has.identity.http;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 
 import javax.servlet.ServletContext;
 
@@ -27,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
-import org.apache.hadoop.http.HttpServer;
+import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.tokenauth.api.web.WEBParams;
 import org.apache.hadoop.security.tokenauth.has.identity.IdentityService;
@@ -40,7 +41,7 @@ public class IdentityHttpServer {
   public static final String IDENTITY_ATTRIBUTE_KEY = "localidentity";
   public static final String CURRENT_CONF = "current.conf";
   
-  private HttpServer httpServer;
+  private HttpServer2 httpServer;
   private final Configuration conf;
   private final IdentityService identityService;
   
@@ -54,8 +55,8 @@ public class IdentityHttpServer {
   
   public void start() throws IOException {
     final InetSocketAddress bindAddr = getAddress(conf);
-    httpServer = new HttpServer.Builder().setName("identity")
-        .setBindAddress(bindAddr.getHostName()).setPort(bindAddr.getPort())
+    httpServer = new HttpServer2.Builder().setName("identity")
+        .addEndpoint(URI.create("http://"+NetUtils.getHostPortString(bindAddr)))
         .setFindPort(false).setConf(conf).setSecurityEnabled(false).build();
     httpServer.setAttribute(IDENTITY_ATTRIBUTE_KEY, identityService);
     httpServer.setAttribute(CURRENT_CONF, conf);
@@ -92,8 +93,11 @@ public class IdentityHttpServer {
   /**
    * Return the actual address bound to by the running server.
    */
+  @Deprecated
   public InetSocketAddress getAddress() {
-    InetSocketAddress addr = httpServer.getListenerAddress();
+    // Mark as deprecated because HttpServer2 can bind multiple endpoints.
+    // This method return the first address.
+    InetSocketAddress addr = httpServer.getConnectorAddress(0);
     assert addr.getPort() != 0;
     return addr;
   }

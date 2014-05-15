@@ -940,6 +940,7 @@ public class ResourceManager extends CompositeService implements Recoverable {
     } else {
       SecurityUtil.login(this.conf, YarnConfiguration.RM_KEYTAB,
         YarnConfiguration.RM_PRINCIPAL, socAddr.getHostName());
+    }
 
     // if security is enable, set rmLoginUGI as UGI of loginUser
     if (UserGroupInformation.isSecurityEnabled()) {

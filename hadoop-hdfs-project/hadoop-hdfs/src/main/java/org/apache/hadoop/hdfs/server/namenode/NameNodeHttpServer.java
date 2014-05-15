@@ -169,7 +169,7 @@ public class NameNodeHttpServer {
                 SecurityUtil.getServerPrincipal(principalInConf, 
                     bindAddress.getHostName()));
       } else if (UserGroupInformation.isSecurityEnabled()) {
-        HttpServer.LOG.error(
+        HttpServer2.LOG.error(
             "WebHDFS and security are enabled, but configuration property '" +
             DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_PRINCIPAL_KEY +
             "' is not set.");
@@ -182,7 +182,7 @@ public class NameNodeHttpServer {
             DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_AUTHNFILE_KEY,
             httpAuthnFile);
       } else if (UserGroupInformation.isSecurityEnabled()) {
-        HttpServer.LOG.error(
+        HttpServer2.LOG.error(
             "WebHDFS and security are enabled, but configuration property '" +
             DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_AUTHNFILE_KEY +
             "' is not set.");

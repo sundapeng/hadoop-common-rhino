@@ -123,7 +123,7 @@ public class HttpFSTokenAuthAuthenticator extends TokenAuthAuthenticator {
     Map<String, String> params = new HashMap<String, String>();
     params.put(OP_PARAM, op.toString());
     params.put(RENEWER_PARAM,renewer);
-    URL url = HttpFSUtils.createHttpURL(new Path(fsURI), params);
+    URL url = HttpFSUtils.createURL(new Path(fsURI), params);
     AuthenticatedURL aUrl =
       new AuthenticatedURL(new HttpFSTokenAuthAuthenticator());
     try {
@@ -150,7 +150,7 @@ public class HttpFSTokenAuthAuthenticator extends TokenAuthAuthenticator {
     params.put(OP_PARAM,
                DelegationTokenOperation.RENEWDELEGATIONTOKEN.toString());
     params.put(TOKEN_PARAM, dToken.encodeToUrlString());
-    URL url = HttpFSUtils.createHttpURL(new Path(fsURI), params);
+    URL url = HttpFSUtils.createURL(new Path(fsURI), params);
     AuthenticatedURL aUrl =
       new AuthenticatedURL(new HttpFSTokenAuthAuthenticator());
     try {
@@ -172,7 +172,7 @@ public class HttpFSTokenAuthAuthenticator extends TokenAuthAuthenticator {
     params.put(OP_PARAM,
                DelegationTokenOperation.CANCELDELEGATIONTOKEN.toString());
     params.put(TOKEN_PARAM, dToken.encodeToUrlString());
-    URL url = HttpFSUtils.createHttpURL(new Path(fsURI), params);
+    URL url = HttpFSUtils.createURL(new Path(fsURI), params);
     AuthenticatedURL aUrl =
       new AuthenticatedURL(new HttpFSTokenAuthAuthenticator());
     try {

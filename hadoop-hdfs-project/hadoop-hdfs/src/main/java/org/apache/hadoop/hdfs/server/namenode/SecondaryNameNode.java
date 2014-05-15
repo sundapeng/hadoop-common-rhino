@@ -217,13 +217,16 @@ public class SecondaryNameNode implements Runnable,
     final String infoBindAddress = infoSocAddr.getHostName();
     UserGroupInformation.setConfiguration(conf);
     if (UserGroupInformation.isSecurityEnabled()) {
-        SecurityUtil.tokenAuthLogin(conf, DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY, 
+      if(UserGroupInformation.isTokenAuthEnabled()){
+        SecurityUtil.tokenAuthLogin(conf, DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY,
             DFS_SECONDARY_NAMENODE_TOKENAUTH_USER_NAME_KEY, infoBindAddress);
       } else {
+        SecurityUtil.login(conf,
           DFSConfigKeys.DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY,
           DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_PRINCIPAL_KEY, infoBindAddress);
       }
     }
+      
     // initiate Java VM metrics
     DefaultMetricsSystem.initialize("SecondaryNameNode");
     JvmMetrics.create("SecondaryNameNode",
