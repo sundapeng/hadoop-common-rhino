@@ -89,7 +89,8 @@ public class IdentityRESTServices {
       @FormParam(RESTParams.IDENTITY_TOKEN) String identityToken,
       @FormParam(RESTParams.TOKEN_ID) long tokenId) throws IOException {
     byte[] token = getIdentityService().renewToken(TokenUtils.decodeToken(identityToken), tokenId);
-    String json = JsonHelper.toJsonString("identityToken", TokenUtils.encodeToken(token));
+    String json = JsonHelper.toJsonString(RESTParams.IDENTITY_TOKEN, 
+        TokenUtils.encodeToken(token));
     return Response.ok(json).type(MediaType.APPLICATION_JSON).build();
   }
   

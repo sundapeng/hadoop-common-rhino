@@ -19,6 +19,7 @@ package org.apache.hadoop.security.tokenauth.api.rest;
 
 public class RESTParams {
   public static final String IDENTITY_TOKEN = "identityToken";
+  public static final String ACCESS_TOKEN = "accessToken";
   public static final String TOKEN_ID = "tokenId";
   public static final String PROTOCOL = "protocol";
   

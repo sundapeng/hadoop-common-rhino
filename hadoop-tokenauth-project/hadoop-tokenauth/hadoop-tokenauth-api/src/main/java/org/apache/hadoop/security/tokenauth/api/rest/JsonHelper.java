@@ -60,10 +60,10 @@ public class JsonHelper {
   public static final String NEED_SECRETS = "needSecrets";
   public static final String RESULT_CODE = "resultCode";
   public static final String FAILURE_CAUSE = "failureCause";
-  public static final String IDENTITY_TOKEN = "identityToken";
+  public static final String IDENTITY_TOKEN = RESTParams.IDENTITY_TOKEN;
 
   // Access token
-  public static final String ACCESS_TOKEN = "accessToken";
+  public static final String ACCESS_TOKEN = RESTParams.IDENTITY_TOKEN;
 
   // Callbacks
   public static final String CALLBACKS = "callbacks";
@@ -159,7 +159,7 @@ public class JsonHelper {
   public static byte[] toAccessTokenBytes(String jsonString) throws IOException{
     try{
       JSONObject object=getJsonObject(jsonString);
-      if(null!=object.get(ACCESS_TOKEN)){
+      if(null != object.get(ACCESS_TOKEN)){
         return TokenUtils.decodeToken((String)object.get(ACCESS_TOKEN));
       }
       else{

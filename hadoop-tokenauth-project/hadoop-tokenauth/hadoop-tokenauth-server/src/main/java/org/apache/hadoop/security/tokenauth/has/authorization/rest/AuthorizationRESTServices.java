@@ -67,7 +67,8 @@ public class AuthorizationRESTServices {
     byte[] accessToken = getAuthorizationService().getAccessToken(
         TokenUtils.decodeToken(identityToken), protocol, remoteAddr);
     
-    String json = JsonHelper.toJsonString("accessToken", TokenUtils.encodeToken(accessToken));
+    String json = JsonHelper.toJsonString(RESTParams.ACCESS_TOKEN, 
+        TokenUtils.encodeToken(accessToken));
     return Response.ok(json).type(MediaType.APPLICATION_JSON).build();
   }
 
