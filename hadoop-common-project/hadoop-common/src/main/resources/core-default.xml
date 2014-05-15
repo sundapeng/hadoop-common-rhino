@@ -1020,6 +1020,26 @@
 </property>
 
 <property>
+  <name>hadoop.http.authentication.tokenauth.identity.server.http.policy</name>
+  <value>HTTP_ONLY</value>
+  <description>This configures the HTTP policy for hasclient. The following
+        values are supported:
+        - HTTP_ONLY : Connect to identity server only on HTTP
+        - HTTPS_ONLY : Connect to identity server only on HTTPS
+  </description>
+</property>
+
+<property>
+  <name>hadoop.http.authentication.tokenauth.identity.server.http.policy</name>
+  <value>HTTP_ONLY</value>
+  <description>This configures the HTTP policy for hasclient. The following
+        values are supported:
+        - HTTP_ONLY : Connect to identity server only on HTTP
+        - HTTPS_ONLY : Connect to identity server only on HTTPS
+  </description>
+</property>
+
+<property>
   <name>hadoop.http.authentication.tokenauth.identity.server.http-address</name>
   <value>${hadoop.security.identity.server.http-address}</value>
   <description>

@@ -51,6 +51,7 @@ import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 import org.apache.hadoop.security.tokenauth.web.TokenAuthAuthenticator;
 
 
+
 //this will need to be replaced someday when there is a suitable replacement
 import sun.net.dns.ResolverConfiguration;
 import sun.net.util.IPAddressUtil;
@@ -119,12 +120,18 @@ public class SecurityUtil {
     if (conf == null) {
       conf = new Configuration();
     }
-    String identityServer = conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY, 
+    String identityServer = conf.get(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_DEFAULT);
-    String authorizationServer = conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY, 
+    String authorizationServer = conf.get(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_DEFAULT);
-    return new HASClientImpl(getHttpServerUrl(HttpConfig.isSecure(), identityServer), 
-        getHttpServerUrl(HttpConfig.isSecure(), authorizationServer));
+    boolean identitySecure = conf.getBoolean(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_POLICY_KEY, true);
+    boolean authorizationSecure = conf.getBoolean(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_POLICY_KEY, true);
+    return new HASClientImpl(getHttpServerUrl(identitySecure, identityServer), getHttpServerUrl(
+        authorizationSecure, authorizationServer));
   }
   
   static String getHttpServerUrl(boolean isSecure, String httpServer) {

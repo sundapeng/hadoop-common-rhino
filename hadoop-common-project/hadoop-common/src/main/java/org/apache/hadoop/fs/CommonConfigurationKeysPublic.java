@@ -281,6 +281,7 @@ public class CommonConfigurationKeysPublic {
     "hadoop.rpc.protection";
   /** Class to override Sasl Properties for a connection */
   public static final String  HADOOP_SECURITY_SASL_PROPS_RESOLVER_CLASS =
+      "hadoop.security.saslproperties.resolver.class";
   
   /** token auth identity/authorization server **/
   public static final String HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_KEY =
@@ -291,6 +292,8 @@ public class CommonConfigurationKeysPublic {
   
   public static final String HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY = 
       "hadoop.security.identity.server.http-address";
+  public static final String HADOOP_SECURITY_IDENTITY_SERVER_HTTP_POLICY_KEY =
+      "hadoop.security.identity.server.http.policy";
   public static final int HADOOP_SECURITY_IDENTITY_SERVER_HTTP_PORT_DEFAULT = 8776;
   public static final String HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_DEFAULT = 
       "0.0.0.0:" + HADOOP_SECURITY_IDENTITY_SERVER_HTTP_PORT_DEFAULT;
@@ -303,6 +306,8 @@ public class CommonConfigurationKeysPublic {
   
   public static final String HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY =
       "hadoop.security.authorization.server.http-address";
+  public static final String HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_POLICY_KEY =
+      "hadoop.security.authorization.server.http.policy";
   public static final int HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_PORT_DEFAULT = 8777;
   public static final String HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_DEFAULT =
       "0.0.0.0:" + HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_PORT_DEFAULT;
