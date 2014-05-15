@@ -84,6 +84,7 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenInfo;
 import org.apache.hadoop.security.token.TokenSelector;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 import org.apache.log4j.Level;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -339,6 +340,24 @@ public class TestSaslRPC {
         }
         @Override
         public Class<? extends Annotation> annotationType() {
+          return null;
+        }
+      };
+    }
+
+    @Override
+    public TokenAuthInfo getTokenAuthInfo(Class<?> protocol, Configuration conf) {
+      return new TokenAuthInfo() {
+        @Override
+        public Class<? extends Annotation> annotationType() {
+          return null;
+        }
+        @Override
+        public String serverPrincipal() {
+          return SERVER_PRINCIPAL_KEY;
+        }
+        @Override
+        public String clientPrincipal() {
           return null;
         }
       };

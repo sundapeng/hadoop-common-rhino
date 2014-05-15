@@ -37,6 +37,9 @@ import org.apache.hadoop.security.authentication.util.KerberosName;
 import org.apache.hadoop.security.authorize.ProxyServers;
 import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.tokenauth.api.web.WebHelper;
+import org.apache.hadoop.security.tokenauth.token.TokenFactory;
+import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -93,7 +96,10 @@ public class JspHelper {
   /** Same as getUGI(context, request, conf, KERBEROS_SSL, true). */
   public static UserGroupInformation getUGI(ServletContext context,
       HttpServletRequest request, Configuration conf) throws IOException {
-    return getUGI(context, request, conf, AuthenticationMethod.KERBEROS_SSL, true);
+    if (UserGroupInformation.isTokenAuthEnabled()) 
+      return getUGI(context, request, conf, AuthenticationMethod.TOKENAUTH_SSL, true);
+    else
+      return getUGI(context, request, conf, AuthenticationMethod.KERBEROS_SSL, true);
   }
 
   /**
@@ -144,6 +150,15 @@ public class JspHelper {
         // This is not necessarily true, could have been auth'ed by user-facing
         // filter
         ugi.setAuthenticationMethod(secureAuthMethod);
+        
+        if (UserGroupInformation.isTokenAuthEnabled()) {
+          if (ugi.getToken() == null) {
+            String tokenStr = WebHelper.getAccessTokenFromCookie(request);
+            if (tokenStr != null) {
+              ugi.addToken(TokenFactory.get().createToken(TokenUtils.decodeToken(tokenStr)));
+            }
+          }
+        }
       }
       if (doAsUserFromQuery != null) {
         // create and attempt to authorize a proxy user

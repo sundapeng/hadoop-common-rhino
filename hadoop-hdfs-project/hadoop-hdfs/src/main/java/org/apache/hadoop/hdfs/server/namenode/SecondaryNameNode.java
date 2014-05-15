@@ -17,6 +17,8 @@
  */
 package org.apache.hadoop.hdfs.server.namenode;
 
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_SECONDARY_NAMENODE_TOKENAUTH_USER_NAME_KEY;
 import static org.apache.hadoop.util.ExitUtil.terminate;
 
 import java.io.File;
@@ -73,6 +75,7 @@ import org.apache.hadoop.metrics2.util.MBeans;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.util.Daemon;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Time;
@@ -214,9 +217,12 @@ public class SecondaryNameNode implements Runnable,
     final String infoBindAddress = infoSocAddr.getHostName();
     UserGroupInformation.setConfiguration(conf);
     if (UserGroupInformation.isSecurityEnabled()) {
-      SecurityUtil.login(conf,
+        SecurityUtil.tokenAuthLogin(conf, DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY, 
+            DFS_SECONDARY_NAMENODE_TOKENAUTH_USER_NAME_KEY, infoBindAddress);
+      } else {
           DFSConfigKeys.DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY,
           DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_PRINCIPAL_KEY, infoBindAddress);
+      }
     }
     // initiate Java VM metrics
     DefaultMetricsSystem.initialize("SecondaryNameNode");
@@ -262,7 +268,7 @@ public class SecondaryNameNode implements Runnable,
         httpAddr, httpsAddr, "secondary",
         DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
         DFSConfigKeys.DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY);
-
+    // TODO: TokenAuth
     nameNodeStatusBeanName = MBeans.register("SecondaryNameNode",
             "SecondaryNameNodeInfo", this);
 
@@ -386,7 +392,7 @@ public class SecondaryNameNode implements Runnable,
       try {
         // We may have lost our ticket since last checkpoint, log in again, just in case
         if(UserGroupInformation.isSecurityEnabled())
-          UserGroupInformation.getCurrentUser().checkTGTAndReloginFromKeytab();
+          UserGroupInformation.getCurrentUser().checkSecurityAndRelogin();
         
         final long now = Time.monotonicNow();
 

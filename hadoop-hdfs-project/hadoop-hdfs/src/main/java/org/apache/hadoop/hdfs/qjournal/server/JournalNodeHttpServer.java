@@ -17,6 +17,8 @@
  */
 package org.apache.hadoop.hdfs.qjournal.server;
 
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_INTERNAL_WEB_PRINCIPAL;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -51,6 +53,7 @@ public class JournalNodeHttpServer {
   void start() throws IOException {
     final InetSocketAddress httpAddr = getAddress(conf);
 
+    // TODO: TokenAuth
     final String httpsAddrString = conf.get(
         DFSConfigKeys.DFS_JOURNALNODE_HTTPS_ADDRESS_KEY,
         DFSConfigKeys.DFS_JOURNALNODE_HTTPS_ADDRESS_DEFAULT);

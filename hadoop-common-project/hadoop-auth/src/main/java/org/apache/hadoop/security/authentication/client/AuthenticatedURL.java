@@ -234,7 +234,12 @@ public class AuthenticatedURL {
     if (connConfigurator != null) {
       conn = connConfigurator.configure(conn);
     }
-    injectToken(conn, token);
+    if (authenticator instanceof AbstractAuthenticator) {
+      injectToken(conn, token);
+    } else {
+      injectCookies(conn, ((AbstractAuthenticator) authenticator).getAuthenticatorCookies());
+    }
+    
     return conn;
   }
 
@@ -252,6 +257,14 @@ public class AuthenticatedURL {
       }
       conn.addRequestProperty("Cookie", AUTH_COOKIE_EQ + t);
     }
+  }
+  
+  /**
+   * Helper method that injects authentication cookies to send with a connection.
+   * The cookies include an authentication token, and may also include other information.
+   */
+  public static void injectCookies(HttpURLConnection conn, String cookies) {
+    conn.addRequestProperty("Cookie", cookies);
   }
 
   /**

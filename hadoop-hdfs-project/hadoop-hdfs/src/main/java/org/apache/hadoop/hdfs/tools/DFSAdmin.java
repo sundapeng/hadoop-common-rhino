@@ -66,6 +66,7 @@ import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.RefreshUserMappingsProtocol;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.security.authorize.RefreshAuthorizationPolicyProtocol;
 import org.apache.hadoop.ipc.RefreshCallQueueProtocol;
 import org.apache.hadoop.util.StringUtils;
@@ -1012,8 +1013,13 @@ public class DFSAdmin extends FsShell {
     // for security authorization
     // server principal for this call   
     // should be NN's one.
-    conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
+          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, ""));
+    } else {
+      conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
         conf.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, ""));
+    }
 
     // Create the client
     RefreshAuthorizationPolicyProtocol refreshProtocol =
@@ -1038,8 +1044,13 @@ public class DFSAdmin extends FsShell {
     // for security authorization
     // server principal for this call   
     // should be NN's one.
-    conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
+          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, ""));
+    } else {
+      conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
         conf.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, ""));
+    }
  
     // Create the client
     RefreshUserMappingsProtocol refreshProtocol =
@@ -1065,8 +1076,13 @@ public class DFSAdmin extends FsShell {
     // for security authorization
     // server principal for this call 
     // should be NAMENODE's one.
-    conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
+          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, ""));
+    } else {
+      conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
         conf.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, ""));
+    }
 
     // Create the client
     RefreshUserMappingsProtocol refreshProtocol =
@@ -1452,8 +1468,13 @@ public class DFSAdmin extends FsShell {
     Configuration conf = getConf();
 
     // For datanode proxy the server principal should be DN's one.
-    conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY,
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY,
+          conf.get(DFSConfigKeys.DFS_DATANODE_TOKENAUTH_USER_NAME_KEY, ""));
+    } else {
+      conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY,
         conf.get(DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY, ""));
+    }
 
     // Create the client
     ClientDatanodeProtocol dnProtocol =     

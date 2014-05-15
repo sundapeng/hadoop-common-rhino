@@ -57,6 +57,7 @@ import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.RefreshUserMappingsProtocol;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.security.authorize.RefreshAuthorizationPolicyProtocol;
 import org.apache.hadoop.ipc.RefreshCallQueueProtocol;
 import org.apache.hadoop.tools.GetUserMappingsProtocol;
@@ -178,13 +179,16 @@ public class NameNode implements NameNodeStatusMXBean {
     DFS_NAMENODE_HTTP_BIND_HOST_KEY,
     DFS_NAMENODE_HTTPS_BIND_HOST_KEY,
     DFS_NAMENODE_KEYTAB_FILE_KEY,
+    DFS_NAMENODE_AUTHENTICATION_FILE_KEY,
     DFS_NAMENODE_SECONDARY_HTTP_ADDRESS_KEY,
     DFS_NAMENODE_SECONDARY_HTTPS_ADDRESS_KEY,
     DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY,
+    DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY,
     DFS_NAMENODE_BACKUP_ADDRESS_KEY,
     DFS_NAMENODE_BACKUP_HTTP_ADDRESS_KEY,
     DFS_NAMENODE_BACKUP_SERVICE_RPC_ADDRESS_KEY,
     DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY,
+    DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY,
     DFS_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
     DFS_HA_FENCE_METHODS_KEY,
     DFS_HA_ZKFC_PORT_KEY,
@@ -553,8 +557,13 @@ public class NameNode implements NameNodeStatusMXBean {
    */
   void loginAsNameNodeUser(Configuration conf) throws IOException {
     InetSocketAddress socAddr = getRpcServerAddress(conf);
-    SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      SecurityUtil.tokenAuthLogin(conf, DFS_NAMENODE_AUTHENTICATION_FILE_KEY,
+          DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, socAddr.getHostName());
+    } else {
+      SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
         DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, socAddr.getHostName());
+    }
   }
   
   /**
@@ -891,8 +900,13 @@ public class NameNode implements NameNodeStatusMXBean {
 
     if (UserGroupInformation.isSecurityEnabled()) {
       InetSocketAddress socAddr = getAddress(conf);
-      SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
+      if (UserGroupInformation.isTokenAuthEnabled()) {
+        SecurityUtil.tokenAuthLogin(conf, DFS_NAMENODE_AUTHENTICATION_FILE_KEY, 
+            DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, socAddr.getHostName());
+      } else {
+        SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
           DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, socAddr.getHostName());
+      }
     }
     
     Collection<URI> nameDirsToFormat = FSNamesystem.getNamespaceDirs(conf);
@@ -994,8 +1008,13 @@ public class NameNode implements NameNodeStatusMXBean {
 
     if (UserGroupInformation.isSecurityEnabled()) {
       InetSocketAddress socAddr = getAddress(conf);
-      SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
+      if (UserGroupInformation.isTokenAuthEnabled()) {
+        SecurityUtil.tokenAuthLogin(conf, DFS_NAMENODE_AUTHENTICATION_FILE_KEY, 
+            DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, socAddr.getHostName());
+      } else {
+        SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
           DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, socAddr.getHostName());
+      }
     }
 
     NNStorage existingStorage = null;

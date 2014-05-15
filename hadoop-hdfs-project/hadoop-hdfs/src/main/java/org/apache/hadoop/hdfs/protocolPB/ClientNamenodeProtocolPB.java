@@ -26,12 +26,15 @@ import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenSelector;
 import org.apache.hadoop.ipc.ProtocolInfo;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 
 @InterfaceAudience.Private
 @InterfaceStability.Stable
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY)
+@TokenAuthInfo(
+    serverPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY)
 @TokenInfo(DelegationTokenSelector.class)
 @ProtocolInfo(protocolName = HdfsConstants.CLIENT_NAMENODE_PROTOCOL_NAME, 
     protocolVersion = 1)

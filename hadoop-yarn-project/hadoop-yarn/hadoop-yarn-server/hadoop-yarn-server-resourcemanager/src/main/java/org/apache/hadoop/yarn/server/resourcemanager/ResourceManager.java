@@ -37,6 +37,7 @@ import org.apache.hadoop.metrics2.source.JvmMetrics;
 import org.apache.hadoop.security.Groups;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.CompositeService;
@@ -795,6 +796,14 @@ public class ResourceManager extends CompositeService implements Recoverable {
                 YarnConfiguration.RM_WEBAPP_SPNEGO_USER_NAME_KEY)
             .withHttpSpnegoKeytabKey(
                 YarnConfiguration.RM_WEBAPP_SPNEGO_KEYTAB_FILE_KEY)
+            .withHttpTokenAuthWebPrincipalKey(
+                YarnConfiguration.RM_WEBAPP_TOKENAUTH_WEB_USER_NAME_KEY)
+            .withHttpTokenAuthWebAuthnFileKey(
+                YarnConfiguration.RM_WEBAPP_TOKENAUTH_WEB_AUTHN_FILE_KEY)
+            .withHttpTokenAuthWebIdentityServerAddressKey(
+                YarnConfiguration.TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)
+            .withHttpTokenAuthWebAuthorizationServerAddressKey(
+                YarnConfiguration.TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY)
             .at(webAppAddress);
     String proxyHostAndPort = WebAppUtils.getProxyHostAndPort(conf);
     if(WebAppUtils.getResolvedRMWebAppURLWithoutScheme(conf).
@@ -924,8 +933,12 @@ public class ResourceManager extends CompositeService implements Recoverable {
   }
   
   protected void doSecureLogin() throws IOException {
-	InetSocketAddress socAddr = getBindAddress(conf);
-    SecurityUtil.login(this.conf, YarnConfiguration.RM_KEYTAB,
+    InetSocketAddress socAddr = getBindAddress(conf);
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      SecurityUtil.tokenAuthLogin(this.conf, YarnConfiguration.RM_AUTHENTICATION_FILE, 
+          YarnConfiguration.RM_PRINCIPAL);
+    } else {
+      SecurityUtil.login(this.conf, YarnConfiguration.RM_KEYTAB,
         YarnConfiguration.RM_PRINCIPAL, socAddr.getHostName());
 
     // if security is enable, set rmLoginUGI as UGI of loginUser

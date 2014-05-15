@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -110,6 +111,31 @@ public class ServiceAuthorizationManager {
       throw new AuthorizationException("User " + user + 
           " is not authorized for protocol " + protocol + 
           ", expected client Kerberos principal is " + clientPrincipal);
+    }
+    // get client tokenauth principal key to verify (if available)
+    TokenAuthInfo taInfo = SecurityUtil.getTokenAuthInfo(protocol, conf);
+    String tokenAuthClientPrincipal = null;
+    if (taInfo != null) {
+      String clientKey = taInfo.clientPrincipal();
+      if (clientKey != null && !clientKey.isEmpty()) {
+        try {
+          tokenAuthClientPrincipal = SecurityUtil.getServerPrincipal(
+              conf.get(clientKey), addr);
+        } catch (IOException e) {
+          throw (AuthorizationException) new AuthorizationException(
+              "Can't figure out TokenAuth principal name for connection from "
+                  + addr + " for user=" + user + " protocol=" + protocol)
+              .initCause(e);
+        }
+      }
+    }
+    if ((tokenAuthClientPrincipal != null && !tokenAuthClientPrincipal.equals(user.getUserName())) ||
+        !acl.isUserAllowed(user)) {
+      AUDITLOG.warn(AUTHZ_FAILED_FOR + user + " for protocol=" + protocol
+          + ", expected client tokenauth principal is " + tokenAuthClientPrincipal);
+      throw new AuthorizationException("User " + user + 
+          " is not authorized for protocol " + protocol + 
+          ", expected client tokenauth principal is " + tokenAuthClientPrincipal);
     }
     AUDITLOG.info(AUTHZ_SUCCESSFUL_FOR + user + " for protocol="+protocol);
   }

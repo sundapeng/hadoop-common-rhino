@@ -239,7 +239,12 @@ public class HttpFSFileSystem extends FileSystem
     if (!realUser.getShortUserName().equals(doAs)) {
       params.put(DO_AS_PARAM, doAs);
     }
-    HttpFSKerberosAuthenticator.injectDelegationToken(params, delegationToken);
+    
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      HttpFSTokenAuthAuthenticator.injectDelegationToken(params, delegationToken);
+    } else {
+      HttpFSKerberosAuthenticator.injectDelegationToken(params, delegationToken);
+    }
     if (makeQualified) {
       path = makeQualified(path);
     }
@@ -266,9 +271,13 @@ public class HttpFSFileSystem extends FileSystem
    * @throws IOException thrown if an IO error occurrs.
    */
   private HttpURLConnection getConnection(URL url, String method) throws IOException {
-    Class<? extends Authenticator> klass =
-      getConf().getClass("httpfs.authenticator.class",
-                         HttpFSKerberosAuthenticator.class, Authenticator.class);
+    Class<? extends Authenticator> klass;
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      klass = HttpFSTokenAuthAuthenticator.class;
+    } else {
+      klass = getConf().getClass("httpfs.authenticator.class",
+          HttpFSKerberosAuthenticator.class, Authenticator.class);
+    }
     Authenticator authenticator = ReflectionUtils.newInstance(klass, getConf());
     try {
       HttpURLConnection conn = new AuthenticatedURL(authenticator).openConnection(url, authToken);
@@ -892,8 +901,13 @@ public class HttpFSFileSystem extends FileSystem
     return doAsRealUserIfNecessary(new Callable<Token<?>>() {
       @Override
       public Token<?> call() throws Exception {
-        return HttpFSKerberosAuthenticator.
-          getDelegationToken(uri, httpFSAddr, authToken, renewer);
+        if (UserGroupInformation.isTokenAuthEnabled()) {
+          return HttpFSTokenAuthAuthenticator.
+              getDelegationToken(uri, httpFSAddr, authToken, renewer);
+        } else {
+          return HttpFSKerberosAuthenticator.
+              getDelegationToken(uri, httpFSAddr, authToken, renewer);
+        }
       }
     });
   }
@@ -902,15 +916,25 @@ public class HttpFSFileSystem extends FileSystem
     return doAsRealUserIfNecessary(new Callable<Long>() {
       @Override
       public Long call() throws Exception {
-        return HttpFSKerberosAuthenticator.
-          renewDelegationToken(uri,  authToken, token);
+        if (UserGroupInformation.isTokenAuthEnabled()) {
+          return HttpFSTokenAuthAuthenticator.
+              renewDelegationToken(uri,  authToken, token);
+        } else {
+          return HttpFSKerberosAuthenticator.
+              renewDelegationToken(uri,  authToken, token);
+        }
       }
     });
   }
 
   public void cancelDelegationToken(final Token<?> token) throws IOException {
-    HttpFSKerberosAuthenticator.
-      cancelDelegationToken(uri, authToken, token);
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      HttpFSTokenAuthAuthenticator.
+        cancelDelegationToken(uri, authToken, token);
+    } else {
+      HttpFSKerberosAuthenticator.
+        cancelDelegationToken(uri, authToken, token);
+    }
   }
 
   @Override

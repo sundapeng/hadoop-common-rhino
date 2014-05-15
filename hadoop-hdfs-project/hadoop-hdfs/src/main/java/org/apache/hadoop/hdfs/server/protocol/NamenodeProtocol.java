@@ -28,6 +28,7 @@ import org.apache.hadoop.hdfs.server.namenode.CheckpointSignature;
 import org.apache.hadoop.io.retry.AtMostOnce;
 import org.apache.hadoop.io.retry.Idempotent;
 import org.apache.hadoop.security.KerberosInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 /*****************************************************************************
  * Protocol that a secondary NameNode uses to communicate with the NameNode.
@@ -35,6 +36,8 @@ import org.apache.hadoop.security.KerberosInfo;
  *****************************************************************************/
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY)
+@TokenAuthInfo(
+    serverPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY)
 @InterfaceAudience.Private
 public interface NamenodeProtocol {
   /**

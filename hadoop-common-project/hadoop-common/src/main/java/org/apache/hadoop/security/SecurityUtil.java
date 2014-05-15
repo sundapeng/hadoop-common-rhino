@@ -39,11 +39,16 @@ import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
+import org.apache.hadoop.security.tokenauth.has.HASClient;
+import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
+import org.apache.hadoop.security.tokenauth.web.TokenAuthAuthenticator;
 
 
 //this will need to be replaced someday when there is a suitable replacement
@@ -108,6 +113,22 @@ public class SecurityUtil {
    */
   protected static boolean isOriginalTGT(KerberosTicket ticket) {
     return isTGSPrincipal(ticket.getServer());
+  }
+  
+  public static HASClient getHASClient(Configuration conf) {
+    if (conf == null) {
+      conf = new Configuration();
+    }
+    String identityServer = conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY, 
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_DEFAULT);
+    String authorizationServer = conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY, 
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_DEFAULT);
+    return new HASClientImpl(getHttpServerUrl(HttpConfig.isSecure(), identityServer), 
+        getHttpServerUrl(HttpConfig.isSecure(), authorizationServer));
+  }
+  
+  static String getHttpServerUrl(boolean isSecure, String httpServer) {
+    return isSecure ? "https://" : "http://" + httpServer;
   }
 
   /**
@@ -205,6 +226,13 @@ public class SecurityUtil {
       final String keytabFileKey, final String userNameKey) throws IOException {
     login(conf, keytabFileKey, userNameKey, getLocalHostName());
   }
+  
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public static void tokenAuthLogin(final Configuration conf,
+      final String authenticationFileKey, final String userNameKey) throws IOException {
+    tokenAuthLogin(conf, authenticationFileKey, userNameKey, getLocalHostName());
+  }
 
   /**
    * Login as a principal specified in config. Substitute $host in user's Kerberos principal 
@@ -240,6 +268,28 @@ public class SecurityUtil {
     String principalName = SecurityUtil.getServerPrincipal(principalConfig,
         hostname);
     UserGroupInformation.loginUserFromKeytab(principalName, keytabFilename);
+  }
+  
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public static void tokenAuthLogin(final Configuration conf,
+      final String authenticationFileKey, final String userNameKey, 
+      String hostname) throws IOException {
+    
+    if(! UserGroupInformation.isSecurityEnabled())
+      return;
+    
+    String authnFile = conf.get(authenticationFileKey);
+    if (authnFile == null || authnFile.length() == 0) {
+      throw new IOException("Running in secure mode, but config doesn't have a authn file");
+    }
+    
+    String principalConfig = conf.get(userNameKey, System
+        .getProperty("user.name"));
+    String principalName = SecurityUtil.getServerPrincipal(principalConfig,
+        hostname);
+    
+    UserGroupInformation.loginUserFromAuthnFile(principalName, authnFile);
   }
 
   /**
@@ -301,6 +351,27 @@ public class SecurityUtil {
     synchronized (securityInfoProviders) {
       for(SecurityInfo provider: securityInfoProviders) {
         KerberosInfo result = provider.getKerberosInfo(protocol, conf);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+    return null;
+  }
+  
+  public static TokenAuthInfo
+  getTokenAuthInfo(Class<?> protocol, Configuration conf) {
+    synchronized (testProviders) {
+      for(SecurityInfo provider: testProviders) {
+        TokenAuthInfo result = provider.getTokenAuthInfo(protocol, conf);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+    synchronized (securityInfoProviders) {
+      for(SecurityInfo provider : securityInfoProviders) {
+        TokenAuthInfo result = provider.getTokenAuthInfo(protocol, conf);
         if (result != null) {
           return result;
         }

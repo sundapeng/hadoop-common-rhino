@@ -19,6 +19,8 @@ package org.apache.hadoop.hdfs.server.namenode.ha;
 
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_AUTHENTICATION_FILE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -54,6 +56,7 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.MD5Hash;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -96,8 +99,13 @@ public class BootstrapStandby implements Tool, Configurable {
     NameNode.checkAllowFormat(conf);
 
     InetSocketAddress myAddr = NameNode.getAddress(conf);
-    SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      SecurityUtil.tokenAuthLogin(conf, DFS_NAMENODE_AUTHENTICATION_FILE_KEY, 
+          DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, myAddr.getHostName());
+    } else {
+      SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
         DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, myAddr.getHostName());
+    }
 
     return SecurityUtil.doAsLoginUserOrFatal(new PrivilegedAction<Integer>() {
       @Override

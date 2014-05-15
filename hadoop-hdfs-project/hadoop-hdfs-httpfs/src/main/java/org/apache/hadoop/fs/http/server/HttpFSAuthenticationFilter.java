@@ -67,6 +67,9 @@ public class HttpFSAuthenticationFilter extends AuthenticationFilter {
     if (props.getProperty(AUTH_TYPE).equals("kerberos")) {
       props.setProperty(AUTH_TYPE,
                         HttpFSKerberosAuthenticationHandler.class.getName());
+    } else if (props.getProperty(AUTH_TYPE).equals("tokenauth")) {
+      props.setProperty(AUTH_TYPE,
+          HttpFSTokenAuthAuthenticationHandler.class.getName());
     }
 
     String signatureSecretFile = props.getProperty(SIGNATURE_SECRET_FILE, null);

@@ -59,6 +59,7 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authentication.server.AuthenticationFilter;
 import org.apache.hadoop.security.authorize.AccessControlList;
+import org.apache.hadoop.security.tokenauth.web.TokenAuthAuthenticationHandler;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Shell;
 import org.mortbay.io.Buffer;
@@ -113,6 +114,7 @@ public final class HttpServer2 implements FilterContainer {
   public static final String CONF_CONTEXT_ATTRIBUTE = "hadoop.conf";
   public static final String ADMINS_ACL = "admins.acl";
   public static final String SPNEGO_FILTER = "SpnegoFilter";
+  public static final String TOKENAUTH_FILTER = "TokenAuthFilter";
   public static final String NO_CACHE_FILTER = "NoCacheFilter";
 
   public static final String BIND_ADDRESS = "bind.address";
@@ -172,6 +174,12 @@ public final class HttpServer2 implements FilterContainer {
     private boolean findPort;
 
     private String hostName;
+	
+	/* token auth */
+    String tokenAuthUsernameConfKey = null;
+    String authnFileConfKey = null; 
+    String identityServerAddressKey = null;
+    String authorizationServerAddressKey = null;
 
     public Builder setName(String name){
       this.name = name;
@@ -271,6 +279,26 @@ public final class HttpServer2 implements FilterContainer {
       return this;
     }
 
+    public Builder setTokenAuthUsernameConfKey(String tokenAuthUsernameConfKey) {
+      this.tokenAuthUsernameConfKey = tokenAuthUsernameConfKey;
+      return this;
+    }
+    
+    public Builder setAuthnFileConfKey(String authnFileConfKey) {
+      this.authnFileConfKey = authnFileConfKey;
+      return this;
+    }
+    
+    public Builder setIdentityServerAddressKey(String identityServerAddressKey){
+      this.identityServerAddressKey = identityServerAddressKey;
+      return this;
+    }
+
+    public Builder setAuthorizationServerAddressKey(String authorizationServerAddressKey){
+      this.authorizationServerAddressKey=authorizationServerAddressKey;
+      return this;
+    }
+
     public HttpServer2 build() throws IOException {
       if (this.name == null) {
         throw new HadoopIllegalArgumentException("name is not set");
@@ -292,7 +320,12 @@ public final class HttpServer2 implements FilterContainer {
       HttpServer2 server = new HttpServer2(this);
 
       if (this.securityEnabled) {
-        server.initSpnego(conf, hostName, usernameConfKey, keytabConfKey);
+        if(UserGroupInformation.isTokenAuthEnabled()){
+          server.initTokenAuth(this.conf, this.tokenAuthUsernameConfKey, this.authnFileConfKey,
+              this.identityServerAddressKey, this.authorizationServerAddressKey);
+        } else {
+          server.initSpnego(conf, hostName, usernameConfKey, keytabConfKey);
+        }
       }
 
       if (connector != null) {
@@ -625,11 +658,16 @@ public final class HttpServer2 implements FilterContainer {
     webAppContext.addServlet(holder, pathSpec);
 
     if(requireAuth && UserGroupInformation.isSecurityEnabled()) {
-       LOG.info("Adding Kerberos (SPNEGO) filter to " + name);
+       LOG.info("Adding " + (UserGroupInformation.isTokenAuthEnabled() ? 
+           "TokenAuth" : "Kerberos (SPNEGO)") + " filter to " + name);
        ServletHandler handler = webAppContext.getServletHandler();
        FilterMapping fmap = new FilterMapping();
        fmap.setPathSpec(pathSpec);
-       fmap.setFilterName(SPNEGO_FILTER);
+       if(UserGroupInformation.isTokenAuthEnabled()){
+         fmap.setFilterName(TOKENAUTH_FILTER);
+       } else {
+         fmap.setFilterName(SPNEGO_FILTER);
+       }
        fmap.setDispatches(Handler.ALL);
        handler.addFilterMapping(fmap);
     }
@@ -782,6 +820,27 @@ public final class HttpServer2 implements FilterContainer {
     params.put(AuthenticationFilter.AUTH_TYPE, "kerberos");
 
     defineFilter(webAppContext, SPNEGO_FILTER,
+                 AuthenticationFilter.class.getName(), params, null);
+  }
+  
+  protected void initTokenAuth(Configuration conf, 
+      String usernameConfKey, String authnFileConfKey, String identityServerKey, String authrizationServerKey) throws IOException {
+    Map<String, String> params = new HashMap<String, String>();
+    String principalInConf = conf.get(usernameConfKey);
+    if (principalInConf != null && !principalInConf.isEmpty()) {
+      params.put("tokenauth.principal", 
+          SecurityUtil.getServerPrincipal(principalInConf, listener.getHost()));
+    }
+    String authnFile = conf.get(authnFileConfKey);
+    if (authnFile != null && !authnFile.isEmpty()){
+      params.put("tokenauth.authnfile", authnFile);
+    }
+    params.put("tokenauth.http.secured", HttpConfig.isSecure() ? "true" : "false");
+    params.put(AuthenticationFilter.AUTH_TYPE,
+        TokenAuthAuthenticationHandler.class.getName());
+    params.put("tokenauth.identity.server.http-address", conf.get(identityServerKey));
+    params.put("tokenauth.authorization.server.http-address", conf.get(authrizationServerKey));
+    defineFilter(webAppContext, TOKENAUTH_FILTER,
                  AuthenticationFilter.class.getName(), params, null);
   }
 

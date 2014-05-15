@@ -98,6 +98,8 @@ import com.google.common.annotations.VisibleForTesting;
 public class HistoryClientService extends AbstractService {
 
   private static final Log LOG = LogFactory.getLog(HistoryClientService.class);
+  private static final String IDENTITY_SERVER_ADDRESS_KEY="hadoop.security.identity.server.http-address";
+  private static final String AUTHORIZATION_SERVER_ADDRESS_KEY="hadoop.security.authorization.server.http-address";
 
   private HSClientProtocol protocolHandler;
   private Server server;
@@ -156,6 +158,12 @@ public class HistoryClientService extends AbstractService {
             JHAdminConfig.MR_WEBAPP_SPNEGO_KEYTAB_FILE_KEY)
         .withHttpSpnegoPrincipalKey(
             JHAdminConfig.MR_WEBAPP_SPNEGO_USER_NAME_KEY)
+        .withHttpTokenAuthWebAuthnFileKey(
+            JHAdminConfig.MR_WEBAPP_TOKENAUTH_WEB_AUTHN_FILE_KEY)
+        .withHttpTokenAuthWebPrincipalKey(
+            JHAdminConfig.MR_WEBAPP_TOKENAUTH_WEB_USER_NAME_KEY)
+        .withHttpTokenAuthWebIdentityServerAddressKey(IDENTITY_SERVER_ADDRESS_KEY)
+        .withHttpTokenAuthWebAuthorizationServerAddressKey(AUTHORIZATION_SERVER_ADDRESS_KEY)
         .at(NetUtils.getHostPortString(bindAddress)).start(webApp);
     
     MRWebAppUtil.setJHSWebappURLWithoutScheme(conf,
@@ -344,9 +352,15 @@ public class HistoryClientService extends AbstractService {
       if (ugi.getRealUser() != null) {
         realUser = new Text(ugi.getRealUser().getUserName());
       }
-      MRDelegationTokenIdentifier tokenIdentifier =
-          new MRDelegationTokenIdentifier(owner, new Text(
-            request.getRenewer()), realUser);
+      MRDelegationTokenIdentifier tokenIdentifier;
+      if (UserGroupInformation.isTokenAuthEnabled()) {
+        tokenIdentifier = new MRDelegationTokenIdentifier(owner, new Text(
+            request.getRenewer()), realUser, ugi.getToken()); 
+      } else {
+        tokenIdentifier = new MRDelegationTokenIdentifier(owner, new Text(
+            request.getRenewer()), realUser); 
+      }
+          
       Token<MRDelegationTokenIdentifier> realJHSToken =
           new Token<MRDelegationTokenIdentifier>(tokenIdentifier,
               jhsDTSecretManager);
@@ -418,7 +432,9 @@ public class HistoryClientService extends AbstractService {
       if (UserGroupInformation.isSecurityEnabled()) {
         return EnumSet.of(AuthenticationMethod.KERBEROS,
                           AuthenticationMethod.KERBEROS_SSL,
-                          AuthenticationMethod.CERTIFICATE)
+                          AuthenticationMethod.CERTIFICATE,
+                          AuthenticationMethod.TOKENAUTH,
+                          AuthenticationMethod.TOKENAUTH_SSL)
             .contains(UserGroupInformation.getCurrentUser()
                     .getRealAuthenticationMethod());
       } else {

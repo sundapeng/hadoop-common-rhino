@@ -24,8 +24,11 @@ import org.apache.hadoop.ha.proto.HAServiceProtocolProtos.HAServiceProtocolServi
 import org.apache.hadoop.ipc.ProtocolInfo;
 import org.apache.hadoop.ipc.VersionedProtocol;
 import org.apache.hadoop.security.KerberosInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 @KerberosInfo(
+    serverPrincipal=CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY)
+@TokenAuthInfo(
     serverPrincipal=CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY)
 @ProtocolInfo(protocolName = "org.apache.hadoop.ha.HAServiceProtocol", 
     protocolVersion = 1)

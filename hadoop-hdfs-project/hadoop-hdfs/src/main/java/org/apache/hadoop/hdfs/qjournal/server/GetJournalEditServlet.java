@@ -51,6 +51,7 @@ import org.apache.hadoop.hdfs.util.DataTransferThrottler;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.util.ServletUtil;
 import org.apache.hadoop.util.StringUtils;
 
@@ -90,11 +91,18 @@ public class GetJournalEditServlet extends HttpServlet {
     }
 
     Set<String> validRequestors = new HashSet<String>();
-    validRequestors.addAll(DFSUtil.getAllNnPrincipals(conf));
-    validRequestors.add(
-        SecurityUtil.getServerPrincipal(conf
-            .get(DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_PRINCIPAL_KEY),
-            SecondaryNameNode.getHttpAddress(conf).getHostName()));
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      validRequestors.addAll(DFSUtil.getAllNnTokenAuthPrincipals(conf));
+      validRequestors.add(SecurityUtil.getServerPrincipal(conf
+          .get(DFSConfigKeys.DFS_SECONDARY_NAMENODE_TOKENAUTH_USER_NAME_KEY),
+          SecondaryNameNode.getHttpAddress(conf).getHostName()));
+    } else {
+      validRequestors.addAll(DFSUtil.getAllNnPrincipals(conf));
+      validRequestors.add(
+          SecurityUtil.getServerPrincipal(conf
+              .get(DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_PRINCIPAL_KEY),
+              SecondaryNameNode.getHttpAddress(conf).getHostName()));
+    }
 
     // Check the full principal name of all the configured valid requestors.
     for (String v : validRequestors) {

@@ -22,10 +22,14 @@ import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.protocol.proto.InterDatanodeProtocolProtos.InterDatanodeProtocolService;
 import org.apache.hadoop.ipc.ProtocolInfo;
 import org.apache.hadoop.security.KerberosInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY,
     clientPrincipal = DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY)
+@TokenAuthInfo(
+    serverPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_USER_NAME_KEY,
+    clientPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_USER_NAME_KEY)
 @ProtocolInfo(protocolName = 
     "org.apache.hadoop.hdfs.server.protocol.InterDatanodeProtocol",
     protocolVersion = 1)

@@ -34,6 +34,7 @@ import org.apache.hadoop.hdfs.server.namenode.JournalManager;
 import org.apache.hadoop.hdfs.server.protocol.NamespaceInfo;
 import org.apache.hadoop.io.retry.Idempotent;
 import org.apache.hadoop.security.KerberosInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 /**
  * Protocol used to communicate between {@link QuorumJournalManager}
@@ -45,6 +46,9 @@ import org.apache.hadoop.security.KerberosInfo;
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_JOURNALNODE_KERBEROS_PRINCIPAL_KEY,
     clientPrincipal = DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY)
+@TokenAuthInfo(
+    serverPrincipal = DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_USER_NAME_KEY,
+    clientPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY)
 @InterfaceAudience.Private
 public interface QJournalProtocol {
   public static final long versionID = 1L;

@@ -22,6 +22,7 @@ import org.apache.hadoop.classification.InterfaceAudience.LimitedPrivate;
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 @Evolving
 @LimitedPrivate({"MapReduce", "HDFS"})
@@ -38,6 +39,14 @@ public abstract class SecurityInfo {
    * @return KerberosInfo
    */
   public abstract KerberosInfo getKerberosInfo(Class<?> protocol, Configuration conf);
+  
+  /**
+   * Get the TokenAuthInfo for a given protocol.
+   * @param protocol interface class
+   * @param conf configuration
+   * @return TokenAuthInfo
+   */
+  public abstract TokenAuthInfo getTokenAuthInfo(Class<?> protocol, Configuration conf);
 
   /**
    * Get the TokenInfo for a given protocol.

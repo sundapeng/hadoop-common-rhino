@@ -46,6 +46,8 @@ YARN_DIR=${YARN_DIR:-"share/hadoop/yarn"}
 YARN_LIB_JARS_DIR=${YARN_LIB_JARS_DIR:-"share/hadoop/yarn/lib"}
 MAPRED_DIR=${MAPRED_DIR:-"share/hadoop/mapreduce"}
 MAPRED_LIB_JARS_DIR=${MAPRED_LIB_JARS_DIR:-"share/hadoop/mapreduce/lib"}
+TOKENAUTH_DIR=${TOKENAUTH_DIR:-"share/hadoop/tokenauth"}
+TOKENAUTH_LIB_JARS_DIR=${TOKENAUTH_LIB_JARS_DIR:-"share/hadoop/tokenauth/lib"}
 
 # the root of the Hadoop installation
 # See HADOOP-6255 for directory structure layout
@@ -244,6 +246,23 @@ if [ -d "$HADOOP_HDFS_HOME/$HDFS_LIB_JARS_DIR" ]; then
 fi
 
 CLASSPATH=${CLASSPATH}:$HADOOP_HDFS_HOME/$HDFS_DIR'/*'
+
+# put tokenauth in classpath if present
+if [ "$HADOOP_TOKENAUTH_HOME" = "" ]; then
+  if [ -d "${HADOOP_PREFIX}/$TOKENAUTH_DIR" ]; then
+    export HADOOP_TOKENAUTH_HOME=$HADOOP_PREFIX
+  fi
+fi
+
+if [ -d "$HADOOP_TOKENAUTH_HOME/$TOKENAUTH_DIR/webapps" ]; then
+  CLASSPATH=${CLASSPATH}:$HADOOP_TOKENAUTH_HOME/$TOKENAUTH_DIR
+fi
+
+if [ -d "$HADOOP_TOKENAUTH_HOME/$TOKENAUTH_LIB_JARS_DIR" ]; then
+  CLASSPATH=${CLASSPATH}:$HADOOP_TOKENAUTH_HOME/$TOKENAUTH_LIB_JARS_DIR'/*'
+fi
+
+CLASSPATH=${CLASSPATH}:$HADOOP_TOKENAUTH_HOME/$TOKENAUTH_DIR'/*'
 
 # put yarn in classpath if present
 if [ "$HADOOP_YARN_HOME" = "" ]; then

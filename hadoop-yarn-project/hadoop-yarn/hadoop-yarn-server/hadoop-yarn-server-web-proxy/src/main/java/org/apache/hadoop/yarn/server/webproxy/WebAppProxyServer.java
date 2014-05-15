@@ -25,6 +25,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.util.ShutdownHookManager;
 import org.apache.hadoop.util.StringUtils;
@@ -70,11 +72,16 @@ public class WebAppProxyServer extends CompositeService {
    * @throws IOException on any error.
    */
   protected void doSecureLogin(Configuration conf) throws IOException {
-    InetSocketAddress socAddr = getBindAddress(conf);  
-    SecurityUtil.login(conf, YarnConfiguration.PROXY_KEYTAB,
-        YarnConfiguration.PROXY_PRINCIPAL, socAddr.getHostName());
+    InetSocketAddress socAddr = getBindAddress(conf);
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      SecurityUtil.tokenAuthLogin(conf, YarnConfiguration.PROXY_AUTHENTICATION_FILE, 
+          YarnConfiguration.PROXY_PRINCIPAL);
+    } else {
+      SecurityUtil.login(conf, YarnConfiguration.PROXY_KEYTAB,
+          YarnConfiguration.PROXY_PRINCIPAL);
+    }
   }
-
+  
   /**
    * Retrieve PROXY bind address from configuration
    *

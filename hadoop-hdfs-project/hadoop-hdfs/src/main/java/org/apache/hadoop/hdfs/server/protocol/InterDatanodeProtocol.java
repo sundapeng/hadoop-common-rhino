@@ -27,12 +27,16 @@ import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.protocol.ExtendedBlock;
 import org.apache.hadoop.hdfs.server.protocol.BlockRecoveryCommand.RecoveringBlock;
 import org.apache.hadoop.security.KerberosInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 /** An inter-datanode protocol for updating generation stamp
  */
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY,
     clientPrincipal = DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY)
+@TokenAuthInfo(
+    serverPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_USER_NAME_KEY,
+    clientPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_USER_NAME_KEY)
 @InterfaceAudience.Private
 public interface InterDatanodeProtocol {
   public static final Log LOG = LogFactory.getLog(InterDatanodeProtocol.class);

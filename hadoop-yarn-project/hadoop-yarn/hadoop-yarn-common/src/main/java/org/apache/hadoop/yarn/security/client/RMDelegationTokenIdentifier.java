@@ -64,6 +64,11 @@ public class RMDelegationTokenIdentifier extends AbstractDelegationTokenIdentifi
   public RMDelegationTokenIdentifier(Text owner, Text renewer, Text realUser) {
     super(owner, renewer, realUser);
   }
+  
+  public RMDelegationTokenIdentifier(Text owner, Text renewer, Text realUser,
+      org.apache.hadoop.security.tokenauth.token.Token token) {
+    super(owner, renewer, realUser, token);
+  }
 
   @Override
   public Text getKind() {

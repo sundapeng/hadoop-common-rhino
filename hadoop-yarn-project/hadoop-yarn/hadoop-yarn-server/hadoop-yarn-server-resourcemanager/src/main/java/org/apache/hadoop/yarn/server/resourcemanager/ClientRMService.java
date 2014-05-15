@@ -862,9 +862,15 @@ public class ClientRMService extends AbstractService implements
       if (ugi.getRealUser() != null) {
         realUser = new Text(ugi.getRealUser().getUserName());
       }
-      RMDelegationTokenIdentifier tokenIdentifier =
-          new RMDelegationTokenIdentifier(owner, new Text(request.getRenewer()), 
-              realUser);
+      RMDelegationTokenIdentifier tokenIdentifier;
+      if (UserGroupInformation.isTokenAuthEnabled()) {
+        tokenIdentifier = new RMDelegationTokenIdentifier(owner, new Text(request.getRenewer()), 
+            realUser, ugi.getToken()); 
+      } else {
+        tokenIdentifier = new RMDelegationTokenIdentifier(owner, new Text(request.getRenewer()), 
+            realUser);
+      }
+          
       Token<RMDelegationTokenIdentifier> realRMDTtoken =
           new Token<RMDelegationTokenIdentifier>(tokenIdentifier,
               this.rmDTSecretManager);
@@ -1017,7 +1023,9 @@ public class ClientRMService extends AbstractService implements
     if (UserGroupInformation.isSecurityEnabled()) {
       return EnumSet.of(AuthenticationMethod.KERBEROS,
                         AuthenticationMethod.KERBEROS_SSL,
-                        AuthenticationMethod.CERTIFICATE)
+                        AuthenticationMethod.CERTIFICATE,
+                        AuthenticationMethod.TOKENAUTH,
+                        AuthenticationMethod.TOKENAUTH_SSL)
           .contains(UserGroupInformation.getCurrentUser()
                   .getRealAuthenticationMethod());
     } else {

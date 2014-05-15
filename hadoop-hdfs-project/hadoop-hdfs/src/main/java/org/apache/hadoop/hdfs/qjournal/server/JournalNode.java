@@ -42,6 +42,8 @@ import org.apache.hadoop.metrics2.lib.DefaultMetricsSystem;
 import org.apache.hadoop.metrics2.source.JvmMetrics;
 import org.apache.hadoop.metrics2.util.MBeans;
 import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.util.DiskChecker;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
@@ -139,8 +141,13 @@ public class JournalNode implements Tool, Configurable, JournalNodeMXBean {
         DefaultMetricsSystem.instance());
 
     InetSocketAddress socAddr = JournalNodeRpcServer.getAddress(conf);
-    SecurityUtil.login(conf, DFSConfigKeys.DFS_JOURNALNODE_KEYTAB_FILE_KEY,
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      SecurityUtil.tokenAuthLogin(conf, DFSConfigKeys.DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY, 
+          DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_USER_NAME_KEY, socAddr.getHostName());
+    } else {
+      SecurityUtil.login(conf, DFSConfigKeys.DFS_JOURNALNODE_KEYTAB_FILE_KEY,
         DFSConfigKeys.DFS_JOURNALNODE_KERBEROS_PRINCIPAL_KEY, socAddr.getHostName());
+    }
     
     registerJNMXBean();
     

@@ -1020,6 +1020,20 @@
 </property>
 
 <property>
+  <name>hadoop.http.authentication.tokenauth.identity.server.http-address</name>
+  <value>${hadoop.security.identity.server.http-address}</value>
+  <description>
+  </description>
+</property>
+
+<property>
+  <name>hadoop.http.authentication.tokenauth.authorization.server.http-address</name>
+  <value>${hadoop.security.authorization.server.http-address}</value>
+  <description>
+  </description>
+</property>
+
+<property>
   <name>hadoop.http.authentication.kerberos.principal</name>
   <value>HTTP/_HOST@LOCALHOST</value>
   <description>

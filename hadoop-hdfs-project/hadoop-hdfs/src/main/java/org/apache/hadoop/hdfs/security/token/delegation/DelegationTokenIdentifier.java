@@ -50,6 +50,11 @@ public class DelegationTokenIdentifier
   public DelegationTokenIdentifier(Text owner, Text renewer, Text realUser) {
     super(owner, renewer, realUser);
   }
+  
+  public DelegationTokenIdentifier(Text owner, Text renewer, Text realUser,
+      org.apache.hadoop.security.tokenauth.token.Token token) {
+    super(owner, renewer, realUser, token);
+  }
 
   @Override
   public Text getKind() {

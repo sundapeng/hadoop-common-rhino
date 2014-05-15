@@ -45,6 +45,7 @@ import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.security.authorize.AccessControlList;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 /** 
  * Protocol that a JobClient and the central JobTracker use to communicate.  The
@@ -53,6 +54,8 @@ import org.apache.hadoop.security.token.TokenInfo;
  */ 
 @KerberosInfo(
     serverPrincipal = JTConfig.JT_USER_NAME)
+@TokenAuthInfo(
+    serverPrincipal = JTConfig.JT_TOKENAUTH_USER_NAME)
 @TokenInfo(DelegationTokenSelector.class)
 @InterfaceAudience.Private
 @InterfaceStability.Stable

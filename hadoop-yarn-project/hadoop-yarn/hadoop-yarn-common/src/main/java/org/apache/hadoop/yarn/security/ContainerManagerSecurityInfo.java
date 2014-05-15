@@ -28,6 +28,7 @@ import org.apache.hadoop.security.SecurityInfo;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenInfo;
 import org.apache.hadoop.security.token.TokenSelector;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 import org.apache.hadoop.yarn.api.ContainerManagementProtocolPB;
 
 @Public
@@ -59,6 +60,11 @@ public class ContainerManagerSecurityInfo extends SecurityInfo {
       }
     };
 
+  }
+
+  @Override
+  public TokenAuthInfo getTokenAuthInfo(Class<?> protocol, Configuration conf) {
+    return null;
   }
 
 }

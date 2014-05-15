@@ -23,6 +23,7 @@ import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.security.RefreshUserMappingsProtocol;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 import org.apache.hadoop.tools.GetUserMappingsProtocol;
 
 /**
@@ -30,6 +31,7 @@ import org.apache.hadoop.tools.GetUserMappingsProtocol;
  * 
  */
 @KerberosInfo(serverPrincipal = CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY)
+@TokenAuthInfo(serverPrincipal = CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY)
 @Private
 @InterfaceStability.Evolving
 public interface HSAdminProtocol extends GetUserMappingsProtocol,

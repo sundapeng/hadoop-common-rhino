@@ -56,6 +56,8 @@ import org.apache.hadoop.ipc.StandbyException;
 import org.apache.hadoop.security.token.SecretManager;
 import org.apache.hadoop.security.token.SecretManager.InvalidToken;
 import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hadoop.security.tokenauth.DefaultTokenAuthCallbackHandler;
+import org.apache.hadoop.security.tokenauth.sasl.SaslTokenAuthServer;
 
 /**
  * A utility class for dealing with SASL on RPC server
@@ -116,6 +118,12 @@ public class SaslRpcServer {
         serverId = (parts.length < 2) ? "" : parts[1];
         break;
       }
+      case TOKENAUTH: {
+        String fullName = UserGroupInformation.getCurrentUser().getUserName();
+        protocol = fullName; //protocol is the user name for token auth
+        serverId = SaslRpcServer.SASL_DEFAULT_REALM;
+        break;
+      }
       default:
         // we should never be able to get here
         throw new AccessControlException(
@@ -144,6 +152,10 @@ public class SaslRpcServer {
                   + "hostname part: " + ugi.getUserName());
         }
         callback = new SaslGssCallbackHandler();
+        break;
+      }
+      case TOKENAUTH: {
+        callback = new DefaultTokenAuthCallbackHandler();
         break;
       }
       default:
@@ -178,7 +190,8 @@ public class SaslRpcServer {
 
   public static void init(Configuration conf) {
     Security.addProvider(new SaslPlainServer.SecurityProvider());
-    // passing null so factory is populated with all possibilities.  the
+    Security.addProvider(new SaslTokenAuthServer.SecurityProvider());
+	// passing null so factory is populated with all possibilities.  the
     // properties passed when instantiating a server are what really matter
     saslFactory = new FastSaslServerFactory(null);
   }
@@ -222,7 +235,8 @@ public class SaslRpcServer {
     @Deprecated
     DIGEST((byte) 82, "DIGEST-MD5"),
     TOKEN((byte) 82, "DIGEST-MD5"),
-    PLAIN((byte) 83, "PLAIN");
+    PLAIN((byte) 83, "PLAIN"),
+    TOKENAUTH((byte) 84, "TOKENAUTH");
 
     /** The code for this method. */
     public final byte code;

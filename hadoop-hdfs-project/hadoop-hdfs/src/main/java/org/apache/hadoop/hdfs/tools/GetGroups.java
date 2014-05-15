@@ -32,6 +32,8 @@ import org.apache.hadoop.hdfs.DFSUtil;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.NameNodeProxies;
 import org.apache.hadoop.hdfs.server.namenode.NameNode;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.tools.GetGroupsBase;
 import org.apache.hadoop.tools.GetUserMappingsProtocol;
 import org.apache.hadoop.util.ToolRunner;
@@ -69,8 +71,14 @@ public class GetGroups extends GetGroupsBase {
   @Override
   public void setConf(Configuration conf) {
     conf = new HdfsConfiguration(conf);
-    String nameNodePrincipal = conf.get(
+    String nameNodePrincipal;
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      nameNodePrincipal = conf.get(
+          DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, "");
+    } else { 
+      nameNodePrincipal = conf.get(
         DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, "");
+    }
     
     if (LOG.isDebugEnabled()) {
       LOG.debug("Using NN principal: " + nameNodePrincipal);

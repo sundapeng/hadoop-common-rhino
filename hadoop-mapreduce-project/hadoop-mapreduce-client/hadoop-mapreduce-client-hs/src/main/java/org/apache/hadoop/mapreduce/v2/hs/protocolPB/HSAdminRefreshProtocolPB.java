@@ -23,8 +23,10 @@ import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.ipc.ProtocolInfo;
 import org.apache.hadoop.mapreduce.v2.hs.proto.HSAdminRefreshProtocolProtos.HSAdminRefreshProtocolService;
 import org.apache.hadoop.security.KerberosInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 @KerberosInfo(serverPrincipal = CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY)
+@TokenAuthInfo(serverPrincipal = CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY)
 @ProtocolInfo(protocolName = "org.apache.hadoop.mapreduce.v2.hs.protocol.HSAdminRefreshProtocol", protocolVersion = 1)
 @Private
 @InterfaceStability.Evolving

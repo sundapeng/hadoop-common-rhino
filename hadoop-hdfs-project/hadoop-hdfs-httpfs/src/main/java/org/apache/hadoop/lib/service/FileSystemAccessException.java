@@ -35,7 +35,8 @@ public class FileSystemAccessException extends XException {
     H08("{0}"),
     H09("Invalid FileSystemAccess security mode [{0}]"),
     H10("Hadoop config directory not found [{0}]"),
-    H11("Could not load Hadoop config files, {0}");
+    H11("Could not load Hadoop config files, {0}"),
+    H12("TokenAuth initialization failed, {0}");
 
     private String template;
 
