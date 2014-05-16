@@ -64,6 +64,12 @@ public class MiniHas {
       "function evaluate(){return true;}";
   private static final String PRINCIPAL = "root";
   private static final String AUTHN_FILE = MINI_TOKENAUTH_BASEDIR + "/root.sso";
+  private static final String IDENTITY_TOKEN_PERSISTENT_ON_EXIT =
+      "hadoop.security.tokenauth.identity.server.issuedtokens.persistent.on.exit";
+  private static final String IDENTITY_TOKEN_PERSISTENT_FILE_KEY =
+      "hadoop.security.tokenauth.identity.server.issuedtokens.persistent.file";
+  private static final String IDENTITYTOKEN_PERSISTENT_FILE =
+      MINI_TOKENAUTH_BASEDIR + "/identity-token-persistent";
   private static final String HADOOP_SECURITY_AUTHENTICATION = 
       "hadoop.security.authentication";
   private static final String HADOOP_SECURITY_AUTHORIZATION = 
@@ -116,6 +122,8 @@ public class MiniHas {
           HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHORIZATION_ENGINE_IMPL_MINI);
       propMap.put(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHORIZATION_POLICY, 
           AUTHO_POLICY_SCRIPT_FILE_NAME);
+      propMap.put(IDENTITY_TOKEN_PERSISTENT_FILE_KEY, IDENTITYTOKEN_PERSISTENT_FILE);
+      propMap.put(IDENTITY_TOKEN_PERSISTENT_ON_EXIT, "false");
       
       //hadoop-core configuration
       propMap.put(HADOOP_SECURITY_AUTHENTICATION, HADOOP_SECURITY_AUTHENTICATION_DEFAULT);
@@ -356,6 +364,9 @@ public class MiniHas {
    */
   public synchronized void shutdown(boolean isDelete) {
     shutdownServices();
+    
+    LOG.info("Mini HAS stopped.");
+    
     if (base_dir != null) {
       if (isDelete) {
         deleteFile(base_dir);

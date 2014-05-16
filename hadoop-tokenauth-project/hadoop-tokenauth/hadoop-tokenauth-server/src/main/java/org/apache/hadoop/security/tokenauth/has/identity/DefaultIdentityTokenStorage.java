@@ -6,9 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,7 +31,7 @@ public class DefaultIdentityTokenStorage extends IdentityTokenStorage {
         HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ISSUEDTOKENS_PERSISTENT_INTERVAL,
         3600) * 1000;
     // make sure the persistent file is accessible
-    File tokenFile=new File(tokenFilePath);
+    File tokenFile = new File(tokenFilePath);
     // try to recovery issued tokens from disk
     if(tokenFile.exists()){
       readFromDisk();
@@ -45,7 +42,7 @@ public class DefaultIdentityTokenStorage extends IdentityTokenStorage {
       tokenFile.createNewFile();
     }
     
-    persistentThread=new Thread(new Runnable(){
+    persistentThread = new Thread(new Runnable(){
       public void run(){
         while(true){
           cleanExpiredTokens();
@@ -67,18 +64,22 @@ public class DefaultIdentityTokenStorage extends IdentityTokenStorage {
     persistentThread.setDaemon(true);
     persistentThread.start();
     
-    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
-      public void run(){
-        cleanExpiredTokens();
-        try {
-          writeToDisk();
-        } catch (IOException e) {
-          LOG.error("Failed to persistent issued tokens.");
-          LOG.error(e.getMessage());
+    if (conf.getBoolean(
+        HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ISSUEDTOKENS_PERSISTENT_ON_EXIT, 
+        true)) {
+      Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+        public void run(){
+          cleanExpiredTokens();
+          try {
+            writeToDisk();
+          } catch (IOException e) {
+            LOG.error("Failed to persistent issued tokens.");
+            LOG.error(e.getMessage());
+          }
+          LOG.info("Persistented issued token before exit.");
         }
-        LOG.info("Persistented issued token before exit.");
-      }
-    }));
+      }));
+    }
   }
 
   @Override

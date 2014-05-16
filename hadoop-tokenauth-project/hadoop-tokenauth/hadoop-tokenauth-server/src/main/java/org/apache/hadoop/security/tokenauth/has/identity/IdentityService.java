@@ -72,11 +72,11 @@ public class IdentityService {
    
   private IdentityService(Configuration conf) throws IllegalArgumentException{
     this.conf = conf;
-    IDENTITY_TOKEN_MAX_LIFETIME=conf.getLong(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME, 0)*1000;
-    IDENTITY_TOKEN_EXTENSION_PERIOD=conf.getLong(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_RENEW_EXTENSION_PERIOD_KEY, DEFAULT_IDENTITY_TOKEN_EXTENSION_PERIOD)*1000;
+    IDENTITY_TOKEN_MAX_LIFETIME = conf.getLong(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME, 0)*1000;
+    IDENTITY_TOKEN_EXTENSION_PERIOD = conf.getLong(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_RENEW_EXTENSION_PERIOD_KEY, DEFAULT_IDENTITY_TOKEN_EXTENSION_PERIOD)*1000;
     tokenFactory = TokenFactory.get();
-    tokenStorage=IdentityTokenStorage.get(conf);
-    adminId=conf.get(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY);
+    tokenStorage = IdentityTokenStorage.get(conf);
+    adminId = conf.get(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY);
   }
   
   Secrets getSecrets() {
@@ -182,9 +182,9 @@ public class IdentityService {
   }
 
   private IdentityTokenInfo getTokenInfo(IdentityToken token){
-    IdentityTokenInfo tokenInfo=tokenStorage.get(token.getId());
+    IdentityTokenInfo tokenInfo = tokenStorage.get(token.getId());
     if(null ==tokenInfo){
-      tokenInfo=new IdentityTokenInfo(token);
+      tokenInfo = new IdentityTokenInfo(token);
     }
     return tokenInfo;
   }
@@ -330,7 +330,7 @@ public class IdentityService {
     return httpServer != null && httpServer.isAlive() && 
         rpcServer != null && rpcServer.isAlive();
   } 
-
+  
   private int doRun(String[] args) throws HadoopIllegalArgumentException,
       IOException, InterruptedException {
 

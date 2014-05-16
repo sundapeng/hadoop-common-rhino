@@ -64,7 +64,7 @@ public class TestIdentityRestServices  {
     HttpURLConnection conn = null;
     InputStream in = null;
     try {
-      URL url = new URL("http://localhost:8776/ws/v1/hello");
+      URL url = new URL("http://localhost:8786/ws/v1/hello");
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("GET");
@@ -100,7 +100,7 @@ public class TestIdentityRestServices  {
     InputStream in = null;
     try {
       byte[] content = JsonHelper.toJsonString("echo", "hello").getBytes("UTF-8");
-      URL url = new URL("http://localhost:8776/ws/v1/authenticate");
+      URL url = new URL("http://localhost:8786/ws/v1/authenticate");
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("POST");
