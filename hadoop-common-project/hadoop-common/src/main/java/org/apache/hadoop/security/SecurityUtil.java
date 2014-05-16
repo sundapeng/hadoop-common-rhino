@@ -126,12 +126,11 @@ public class SecurityUtil {
     String authorizationServer = conf.get(
         CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_DEFAULT);
-    boolean identitySecure = conf.getBoolean(
-        CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_POLICY_KEY, true);
-    boolean authorizationSecure = conf.getBoolean(
-        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_POLICY_KEY, true);
-    return new HASClientImpl(getHttpServerUrl(identitySecure, identityServer), getHttpServerUrl(
-        authorizationSecure, authorizationServer));
+    boolean serverSecure = conf.getBoolean(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_KEY,
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_DEFAULT);
+    return new HASClientImpl(getHttpServerUrl(serverSecure, identityServer), getHttpServerUrl(
+        serverSecure, authorizationServer));
   }
   
   static String getHttpServerUrl(boolean isSecure, String httpServer) {

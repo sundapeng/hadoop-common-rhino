@@ -117,7 +117,7 @@ public class AuthorizationHttpServer {
   public static String getAccessTokenUrl(Configuration conf) {
     if (conf == null) conf = new Configuration();
     return conf
-        .get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_POLICY_KEY,
+        .get(CommonConfigurationKeysPublic.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_KEY,
             "HTTPS").equalsIgnoreCase("HTTPS") ? "https://" : "http://"
         + getAuthorizationHttpServerAddress(conf) + WEBParams.AUTHORIZE_SERVLET_PATH_SPEC;
   }
