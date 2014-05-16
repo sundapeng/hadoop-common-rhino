@@ -271,7 +271,13 @@ public class SecondaryNameNode implements Runnable,
         httpAddr, httpsAddr, "secondary",
         DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
         DFSConfigKeys.DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY);
-    // TODO: TokenAuth
+    builder.setTokenAuthUsernameConfKey(DFSUtil.getTokenAuthWebPrincipalKey(conf,
+        DFSConfigKeys.DFS_SECONDARY_NAMENODE_INTERNAL_TOKENAUTH_WEB_USER_NAME_KEY))
+    .setAuthnFileConfKey(DFSUtil.getTokenAuthWebKeytabKey(conf,
+        DFSConfigKeys.DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY))
+    .setIdentityServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)
+    .setAuthorizationServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY);
+    
     nameNodeStatusBeanName = MBeans.register("SecondaryNameNode",
             "SecondaryNameNodeInfo", this);
 

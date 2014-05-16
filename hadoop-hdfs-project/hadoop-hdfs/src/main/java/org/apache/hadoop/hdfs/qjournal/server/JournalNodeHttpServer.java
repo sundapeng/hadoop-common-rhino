@@ -63,6 +63,8 @@ public class JournalNodeHttpServer {
         httpAddr, httpsAddr, "journal",
         DFSConfigKeys.DFS_JOURNALNODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
         DFSConfigKeys.DFS_JOURNALNODE_KEYTAB_FILE_KEY);
+    builder.setTokenAuthUsernameConfKey(DFSUtil.getTokenAuthWebPrincipalKey(conf, DFS_JOURNALNODE_TOKENAUTH_INTERNAL_WEB_PRINCIPAL))
+    .setAuthnFileConfKey(DFSUtil.getTokenAuthWebKeytabKey(conf, DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY));
 
     httpServer = builder.build();
     httpServer.setAttribute(JN_ATTRIBUTE_KEY, localJournalNode);

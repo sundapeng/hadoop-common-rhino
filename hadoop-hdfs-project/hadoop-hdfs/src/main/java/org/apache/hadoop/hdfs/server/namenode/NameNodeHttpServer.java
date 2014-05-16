@@ -67,7 +67,6 @@ public class NameNodeHttpServer {
   }
 
   private void initWebHdfs(Configuration conf) throws IOException {
-    // TODO: TokenAuth
     if (WebHdfsFileSystem.isEnabled(conf, HttpServer2.LOG)) {
       // set user pattern based on configuration file
       UserParam.setUserPattern(conf.get(
@@ -123,6 +122,12 @@ public class NameNodeHttpServer {
         httpAddr, httpsAddr, "hdfs",
         DFSConfigKeys.DFS_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
         DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY);
+    builder.setTokenAuthUsernameConfKey(
+            DFSUtil.getTokenAuthWebPrincipalKey(conf,
+                DFSConfigKeys.DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_USER_NAME_KEY))
+        .setIdentityServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)
+        .setAuthorizationServerAddressKey(
+            DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY);
 
     httpServer = builder.build();
 
