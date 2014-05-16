@@ -21,8 +21,13 @@ package org.apache.hadoop.security.tokenauth.token.impl;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.hadoop.security.tokenauth.secrets.Secrets;
+import org.apache.hadoop.security.tokenauth.token.Attribute;
+import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 import org.apache.hadoop.security.tokenauth.util.WritableUtils;
 
 public class IdentityToken extends AbstractToken {
@@ -48,6 +53,11 @@ public class IdentityToken extends AbstractToken {
   
   public IdentityToken(byte[] rawBytes, Secrets secrets) {
     super(rawBytes, secrets);
+  }
+  
+  public IdentityToken(long id, Secrets secrets, String issuer, String user, long issueInstant,
+      long notBefore, long notOnOrAfter, boolean encrypted) {
+    super(id, secrets, issuer, user, issueInstant, notBefore, notOnOrAfter, encrypted);
   }
 
   @Override

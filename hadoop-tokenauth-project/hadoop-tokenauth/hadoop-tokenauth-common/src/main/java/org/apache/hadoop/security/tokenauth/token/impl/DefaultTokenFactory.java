@@ -44,7 +44,7 @@ public class DefaultTokenFactory extends TokenFactory {
   }
   
   @Override
-  public Token createIdentityToken(byte[] identityToken) throws IOException {
+  public IdentityToken createIdentityToken(byte[] identityToken) throws IOException {
     IdentityToken token = new IdentityToken(identityToken);
     DataInputBuffer buffer = new DataInputBuffer();
     buffer.reset(identityToken, 0, identityToken.length);
@@ -53,7 +53,7 @@ public class DefaultTokenFactory extends TokenFactory {
   }
   
   @Override
-  public Token createIdentityToken(Secrets secrets, byte[] identityToken) throws IOException {
+  public IdentityToken createIdentityToken(Secrets secrets, byte[] identityToken) throws IOException {
     IdentityToken token = new IdentityToken(identityToken, secrets);
     DataInputBuffer buffer = new DataInputBuffer();
     buffer.reset(identityToken, 0, identityToken.length);

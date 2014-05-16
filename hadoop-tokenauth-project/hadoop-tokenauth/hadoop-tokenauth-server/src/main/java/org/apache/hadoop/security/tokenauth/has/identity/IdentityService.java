@@ -21,9 +21,12 @@ package org.apache.hadoop.security.tokenauth.has.identity;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.crypto.SecretKey;
 import javax.security.auth.callback.Callback;
@@ -56,13 +59,24 @@ import org.apache.hadoop.util.Time;
 
 public class IdentityService {
   private final static String IDENTITY_SERVICE_SECRETS = "IDENTITY_SERVICE_SECRETS";
+  private static long IDENTITY_TOKEN_MAX_LIFETIME;
+  private static long IDENTITY_TOKEN_EXTENSION_PERIOD;
+  private final static long DEFAULT_IDENTITY_TOKEN_EXTENSION_PERIOD = 24 * 60 * 60 * 1000; // 1 day
   private Configuration conf;
   private IdentityRPCServer rpcServer;
   private IdentityHttpServer httpServer;
   private Secrets secrets;
+  private final TokenFactory tokenFactory;
+  private final IdentityTokenStorage tokenStorage;
+  private final String adminId;
    
-  private IdentityService(Configuration conf) {
+  private IdentityService(Configuration conf) throws IllegalArgumentException{
     this.conf = conf;
+    IDENTITY_TOKEN_MAX_LIFETIME=conf.getLong(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME, 0)*1000;
+    IDENTITY_TOKEN_EXTENSION_PERIOD=conf.getLong(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_RENEW_EXTENSION_PERIOD_KEY, DEFAULT_IDENTITY_TOKEN_EXTENSION_PERIOD)*1000;
+    tokenFactory = TokenFactory.get();
+    tokenStorage=IdentityTokenStorage.get(conf);
+    adminId=conf.get(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY);
   }
   
   Secrets getSecrets() {
@@ -125,12 +139,90 @@ public class IdentityService {
     }
   }
   
-  public byte[] renewToken(byte[] identityToken, long tokenId) throws IOException {
-    throw new IOException("Renew token is not supported.");
+  public byte[] renewToken(byte[] tokenBytes, long tokenId) throws IOException {
+    // Validate current token
+    IdentityToken identityToken = (IdentityToken) tokenFactory.createIdentityToken(
+        getValidationSecrets(), tokenBytes);
+    validateToken(identityToken);
+    identityToken=getTargetToken(identityToken,tokenId);
+
+    // TODO:Check renew window?
+
+    // Check expire time and max lifetime
+    if(identityToken.getExpiryTime()>=identityToken.getCreationTime()+IDENTITY_TOKEN_MAX_LIFETIME){
+      throw new IOException("This token cannot be renewed. It has reached the renewal limitation. "+
+          "Please get a new token.");
+    }
+    
+    // Extend the expire time
+    long newExpiryTime = Math.min(identityToken.getExpiryTime() + IDENTITY_TOKEN_EXTENSION_PERIOD,
+        identityToken.getCreationTime() + IDENTITY_TOKEN_MAX_LIFETIME);
+    IdentityToken newToken = new IdentityToken(identityToken.getId(), SecretsManager.get().getSecrets(identityToken.getUser()),
+        identityToken.getIssuer(), identityToken.getUser(), identityToken.getIssueInstant(),
+        identityToken.getNotBefore(), newExpiryTime, identityToken.isEncrypted());
+    if(identityToken.getAttributes()!=null){
+      newToken.getAttributes().addAll(identityToken.getAttributes());
+    }
+
+    tokenStorage.put(new IdentityTokenInfo(newToken));
+
+    return TokenUtils.getBytesOfToken(newToken);
   }
   
-  public void cancelToken(byte[] identityToken, long tokenId) throws IOException {
-    throw new IOException("Cancel token is not supported.");
+  public void cancelToken(byte[] tokenBytes, long tokenId) throws IOException {
+    // Validate current token
+    IdentityToken identityToken = (IdentityToken) tokenFactory.createIdentityToken(
+        getValidationSecrets(), tokenBytes);
+    validateToken(identityToken);
+    identityToken=getTargetToken(identityToken,tokenId);
+    
+    IdentityTokenInfo tokenInfo=getTokenInfo(identityToken);
+    tokenInfo.revoke();
+    tokenStorage.put(tokenInfo);
+  }
+
+  private IdentityTokenInfo getTokenInfo(IdentityToken token){
+    IdentityTokenInfo tokenInfo=tokenStorage.get(token.getId());
+    if(null ==tokenInfo){
+      tokenInfo=new IdentityTokenInfo(token);
+    }
+    return tokenInfo;
+  }
+  
+  private void validateToken(Token token) throws IOException{
+    if (TokenUtils.isExpired(token)) {
+      throw new IOException("This token is expired.");
+    }
+    if(getTokenInfo((IdentityToken) token).isRevoked()){
+      throw new IOException("This token has been revoked.");
+    }
+  }
+
+  /**
+   * If targetTokenId is 0, then operations will take effect on current token. Otherwise, check
+   * operator's permission.
+   * @param identityToken operator's identity token
+   * @param targetTokenId target token's ID
+   * @return target token
+   * @throws IOException
+   */
+  private IdentityToken getTargetToken(IdentityToken identityToken, long targetTokenId) throws IOException{
+    // If the requester is an administrator
+    if(0!=targetTokenId&&identityToken.getUser().equals(adminId)){
+      IdentityTokenInfo ti=tokenStorage.get(targetTokenId);
+      if(null!=ti){
+        identityToken=tokenStorage.get(targetTokenId).getToken();
+      }
+      else{
+        throw new IOException("Invalid token ID. Please make sure the identity "+
+      "server has issued a token with specified ID and this token is still invalid.");
+      }
+    }
+    else if(0!=targetTokenId&&!identityToken.getUser().equals(adminId)){
+      throw new IOException("Permission denied. Only identity server administrators can manage tokens.");
+    }
+
+    return identityToken;
   }
   
   /**
@@ -140,6 +232,7 @@ public class IdentityService {
    */
   public Secrets getSecrets(byte[] tokenBytes, String protocol)  throws IOException {
     Token identityToken = TokenFactory.get().createIdentityToken(secrets, tokenBytes);
+    validateToken(identityToken);
     
     String authzServerPrincipal = getAuthorizationServerPrincipal();
     String user = identityToken.getPrincipal().getName();
@@ -222,7 +315,9 @@ public class IdentityService {
     
     if (attributes != null)
       identityToken.getAttributes().addAll(attributes);
-    
+
+    tokenStorage.put(new IdentityTokenInfo((IdentityToken)identityToken));
+      
     return identityToken;
   }
 
@@ -304,5 +399,9 @@ public class IdentityService {
         IdentityService.create(parser.getConfiguration());
 
     System.exit(identityService.run(parser.getRemainingArgs()));
+  }
+  
+  private Secrets getValidationSecrets() throws IOException {
+    return UserGroupInformation.getLoginUser().getValidationSecrets();
   }
 }

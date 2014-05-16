@@ -100,6 +100,10 @@ public class HASConfiguration extends Configuration {
   public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_LISTENER_THREAD_COUNT_KEY = 
       HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_CONFIG_PREFIX + ".listener.thread.count";
   public static final int HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_LISTENER_THREAD_COUNT_DEFAULT = 50;
+  public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ISSUEDTOKENS_PERSISTENT_FILE_KEY = 
+      HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_CONFIG_PREFIX + ".issuedtokens.persistent.file";
+  public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ISSUEDTOKENS_PERSISTENT_INTERVAL = 
+      HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_CONFIG_PREFIX + ".issuedtokens.persistent.interval";
   
   public static final String HADOOP_SECURITY_TOKENAUTH_SECRETSMANAGER_KEYSTORE_KEY = 
       HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".secretsmanager.keystore";
@@ -124,7 +128,11 @@ public class HASConfiguration extends Configuration {
       HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.token.renewable";
   public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_RENEW_TIME_KEY =
       HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.token.max.renew.time";
-  
+  public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME =
+      HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.token.max.lifetime";
+  public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_RENEW_EXTENSION_PERIOD_KEY =
+      HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.token.renew.extension.period";
+
   public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVICE_PROTOCOL_ACL = 
       HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.service.protocol.acl";
   public static final String HADOOP_SECURITY_TOKENAUTH_SECRETS_PROTOCOL_ACL = 

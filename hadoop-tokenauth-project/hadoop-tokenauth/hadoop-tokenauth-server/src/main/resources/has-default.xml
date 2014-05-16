@@ -199,6 +199,19 @@
     <description>max renewable time of identity token.</description>
   </property>
   
+ <property>
+    <name>hadoop.security.tokenauth.identity.token.max.lifetime</name>
+    <value>604800</value>
+    <description>max lifetime of identity token. Unit: second</description>
+  </property>
+  
+  <property>
+    <name>hadoop.security.tokenauth.identity.token.renew.extension.period</name>
+    <value>86400</value>
+    <description>When a token is renewed, it's expire time will be extended as
+    this value specified. Unit: second.</description>
+  </property>
+  
   <property>
     <name>hadoop.security.tokenauth.identity.server.admin</name>
     <value></value>
@@ -209,6 +222,18 @@
     <name>hadoop.security.tokenauth.identity.server.listener.thread.count</name>
     <value>50</value>
     <description>identity server listener thread count.</description>
+  </property>
+  
+  <property>
+    <name>hadoop.security.tokenauth.identity.server.issuedtokens.persistent.file</name>
+    <value></value>
+    <description>Serialized token list.</description>
+  </property>
+  
+  <property>
+    <name>hadoop.security.tokenauth.identity.server.issuedtokens.persistent.interval</name>
+    <value>3600</value>
+    <description>The interval for writing issued tokens to disk. Unit: second.</description>
   </property>
   
   <property>

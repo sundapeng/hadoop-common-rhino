@@ -30,10 +30,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
+import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 import org.apache.hadoop.security.tokenauth.has.identity.IdentityService;
 import org.apache.hadoop.security.tokenauth.secrets.Secrets;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
@@ -42,6 +45,8 @@ import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 public class IdentityRESTServices {
   
   public static final String PATH_PREFIX = RESTParams.PATH_V1;;
+  
+  private static final Log LOG = LogFactory.getLog(IdentityRESTServices.class);
   
   private @Context ServletContext context;
   
@@ -62,6 +67,7 @@ public class IdentityRESTServices {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
   public Response authenticate(String jsonString) throws IOException {
+    LOG.info("New authenticate request: "+jsonString);
     IdentityRequest identityRequest = JsonHelper.toIdentityRequest(jsonString);
     IdentityResponse identityResponse = getIdentityService().authenticate(identityRequest);
     String json = JsonHelper.toJsonString(identityResponse);

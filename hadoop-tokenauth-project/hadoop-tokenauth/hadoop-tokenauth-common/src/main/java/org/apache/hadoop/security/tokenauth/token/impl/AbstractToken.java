@@ -61,12 +61,18 @@ public abstract class AbstractToken implements Token{
   private Secrets secrets; /** secrets are used to build trust of token **/
   private final byte[] rawBytes;
   
-  public AbstractToken(Secrets secrets,
+  /* Create a token with a specified token ID */
+  public AbstractToken(long id, Secrets secrets,
       String issuer, String user, long issueInstant, 
-      long notBefore, long notOnOrAfter, boolean encrypted) {
+      long notBefore, long notOnOrAfter, boolean encrypted){
     if(user == null || secrets == null || issuer == null)
       throw new NullPointerException("secrets, issuer and user can not be null.");
-    this.id = (new SecureRandom()).nextLong();
+    if(0==id){
+      this.id=(new SecureRandom()).nextLong();
+    }
+    else{
+      this.id=id;
+    }
     this.secrets = secrets;
     this.issuer = issuer;
     this.user = user;
@@ -75,6 +81,13 @@ public abstract class AbstractToken implements Token{
     this.notOnOrAfter = notOnOrAfter;
     this.encrypted = encrypted;
     this.rawBytes = null;
+  }
+  
+  /* Create a token with a random token ID */
+  public AbstractToken(Secrets secrets,
+      String issuer, String user, long issueInstant, 
+      long notBefore, long notOnOrAfter, boolean encrypted) {
+    this(0,secrets,issuer,user,issueInstant,notBefore,notOnOrAfter,encrypted);
   }
   
   /*only for read*/
@@ -259,6 +272,10 @@ public abstract class AbstractToken implements Token{
 
   public long getIssueInstant() {
     return issueInstant;
+  }
+  
+  public String getUser(){
+    return user;
   }
 
   public long getNotBefore() {

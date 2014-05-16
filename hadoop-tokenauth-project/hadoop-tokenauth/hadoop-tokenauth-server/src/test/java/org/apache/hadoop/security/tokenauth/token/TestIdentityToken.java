@@ -19,7 +19,16 @@
 package org.apache.hadoop.security.tokenauth.token;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+
+import org.apache.hadoop.security.tokenauth.has.identity.IdentityTokenInfo;
 import org.apache.hadoop.security.tokenauth.secrets.Secrets;
 import org.apache.hadoop.security.tokenauth.secrets.SecretsManager;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
@@ -28,18 +37,17 @@ import org.apache.hadoop.util.Time;
 import org.junit.Test;
 
 public class TestIdentityToken {
-  
+
   @Test
   public void testToken() throws Exception {
-    
+
     Secrets secrets = SecretsManager.get().getSecrets("test");
     long instant = Time.now();
     long fiveMins = 5 * 60 * 1000; // in milliseconds
     long oneDay = 24 * 60 * 60 * 1000; // in milliseconds
-    
-    Token identityToken = new IdentityToken(
-        secrets, "www.apache.org", "test", instant, 
-        instant - fiveMins, instant + oneDay, false);
+
+    Token identityToken = new IdentityToken(secrets, "www.apache.org", "test", instant, instant
+        - fiveMins, instant + oneDay, false);
     Attribute groups = new Attribute("groups");
     groups.getValues().add("root");
     groups.getValues().add("guest");
@@ -52,27 +60,28 @@ public class TestIdentityToken {
     groups.getValues().add("12345678");
     Attribute mail = new Attribute("mail");
     groups.getValues().add("test@apache.org");
-    
+
     identityToken.getAttributes().add(groups);
     identityToken.getAttributes().add(age);
     identityToken.getAttributes().add(phone);
     identityToken.getAttributes().add(mail);
-    
+
     byte[] tokenBytes = TokenUtils.getBytesOfToken(identityToken);
-    
+
     String tokenStr = TokenUtils.encodeToken(tokenBytes);
     System.out.println(tokenStr.length());
-    
-    //Read raw
+
+    // Read raw
     byte[] decodeTokenBytes = TokenUtils.decodeToken(tokenStr);
     Token rawToken = TokenFactory.get().createIdentityToken(decodeTokenBytes);
-    
+
     byte[] rawTokenBytes = TokenUtils.getBytesOfToken(rawToken);
-    
-    Secrets validationSecrets = new ValidationSecrets(
-        secrets.getSecretKey(), secrets.getPublicKey());
-    Token resultIdentityToken = TokenFactory.get().createIdentityToken(validationSecrets, rawTokenBytes);
-    
+
+    Secrets validationSecrets = new ValidationSecrets(secrets.getSecretKey(),
+        secrets.getPublicKey());
+    Token resultIdentityToken = TokenFactory.get().createIdentityToken(validationSecrets,
+        rawTokenBytes);
+
     System.out.println(resultIdentityToken.getPrincipal().getName());
     
     assertEquals(tokenBytes.length, rawTokenBytes.length);
@@ -80,4 +89,51 @@ public class TestIdentityToken {
                  new String(rawTokenBytes, 0, rawTokenBytes.length));
   }
   
+  @Test
+  public void testWriteAndReadTokenInfo() throws Exception {
+    String testFile = "/tmp/testTokens.dat";
+    Secrets secrets = SecretsManager.get().getSecrets("test");
+    long instant = Time.now();
+    long fiveMins = 5 * 60 * 1000; // in milliseconds
+    long oneDay = 24 * 60 * 60 * 1000; // in milliseconds
+    String phoneNumber = "12345678";
+    Attribute phone = new Attribute("phone");
+    phone.getValues().add(phoneNumber);
+
+    Token identityToken = new IdentityToken(secrets, "www.apache.org", "test", instant, instant
+        - fiveMins, instant + oneDay, false);
+    identityToken.getAttributes().add(phone);
+
+    IdentityTokenInfo tokenInfo = new IdentityTokenInfo((IdentityToken) identityToken);
+    FileOutputStream fos = new FileOutputStream(testFile);
+    DataOutput out = new DataOutputStream(fos);
+    tokenInfo.write(out);
+
+    FileInputStream fis = new FileInputStream(testFile);
+    DataInput in = new DataInputStream(fis);
+    tokenInfo.readFields(in);
+
+    // test tokenInfo
+    assertEquals(instant, tokenInfo.getCreationTime());
+
+    IdentityToken newToken = tokenInfo.getToken();
+    Attribute testPhone = null;
+    String testPhoneNumber = null;
+    for (Attribute attr : newToken.getAttributes()) {
+      if (attr.getName().equals("phone")) {
+        testPhone = attr;
+      }
+    }
+
+    // test token
+    assertNotNull(testPhone);
+
+    for (Object o : testPhone.getValues()) {
+      testPhoneNumber = o.toString();
+    }
+
+    // test attribute value
+    assertEquals(testPhoneNumber, phoneNumber);
+  }
+
 }
