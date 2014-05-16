@@ -35,14 +35,14 @@ public class DefaultIdentityTokenStorage extends IdentityTokenStorage {
         3600) * 1000;
     // make sure the persistent file is accessible
     File tokenFile=new File(tokenFilePath);
-    if (!((tokenFile.exists()&&tokenFile.canRead()&&tokenFile.canWrite())||(!tokenFile.exists())&&tokenFile.getParentFile().canWrite())){
-      throw new IllegalArgumentException(
-          "Cannot read or write issued tokens file. Please make sure you have set the right value for"
-              + HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ISSUEDTOKENS_PERSISTENT_FILE_KEY);
-    }
     // try to recovery issued tokens from disk
     if(tokenFile.exists()){
       readFromDisk();
+    }
+    else{
+      // Create an empty file. It can make sure the path is writable.
+      tokenFile.getParentFile().mkdirs();
+      tokenFile.createNewFile();
     }
     
     persistentThread=new Thread(new Runnable(){
