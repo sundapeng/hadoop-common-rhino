@@ -134,7 +134,7 @@ public class SecurityUtil {
   }
   
   static String getHttpServerUrl(boolean isSecure, String httpServer) {
-    return isSecure ? "https://" : "http://" + httpServer;
+    return (isSecure ? "https://" : "http://") + httpServer;
   }
 
   /**
