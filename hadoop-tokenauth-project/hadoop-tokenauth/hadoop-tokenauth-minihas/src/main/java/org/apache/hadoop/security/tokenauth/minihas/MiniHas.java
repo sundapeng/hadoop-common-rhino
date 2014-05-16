@@ -356,10 +356,12 @@ public class MiniHas {
    */
   public synchronized void shutdown(boolean isDelete) {
     shutdownServices();
-    if (isDelete) {
-      deleteFile(base_dir);
-    } else {
-      deleteFileOnExit(base_dir);
+    if (base_dir != null) {
+      if (isDelete) {
+        deleteFile(base_dir);
+      } else {
+        deleteFileOnExit(base_dir);
+      }
     }
   }
   
@@ -387,7 +389,7 @@ public class MiniHas {
       } else if (file.isDirectory()) {
         File files[] = file.listFiles();
         for (File f : files) {
-          deleteFile(f);
+          deleteFileOnExit(f);
         }
       }
     } else {
