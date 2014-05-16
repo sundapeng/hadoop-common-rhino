@@ -38,8 +38,8 @@ public class TestMiniHasHttpClient {
   @BeforeClass
   public static void setUp() throws Exception {
     has = new MiniHas.Builder()
-              .setIdentityHttpAddr("localhost:8776")
-              .setAuthoHttpAddr("localhost:8777")
+              .setIdentityHttpAddr("localhost:8786")
+              .setAuthoHttpAddr("localhost:8787")
               .build();
     has.waitHasUp();
   }
@@ -53,7 +53,7 @@ public class TestMiniHasHttpClient {
   
   @Test
   public void testAuthn() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:8776", null);
+    HASClient client = new HASClientImpl("http://localhost:8786", null);
     IdentityRequest request = new IdentityRequest(null,null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -72,7 +72,7 @@ public class TestMiniHasHttpClient {
 
   @Test
   public void testAccessToken() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:8776", "http://localhost:8777");
+    HASClient client = new HASClientImpl("http://localhost:8786", "http://localhost:8787");
     IdentityRequest request = new IdentityRequest("12345678", null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());

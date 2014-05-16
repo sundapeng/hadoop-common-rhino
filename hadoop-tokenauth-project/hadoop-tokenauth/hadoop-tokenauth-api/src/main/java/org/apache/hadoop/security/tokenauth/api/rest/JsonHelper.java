@@ -63,7 +63,7 @@ public class JsonHelper {
   public static final String IDENTITY_TOKEN = RESTParams.IDENTITY_TOKEN;
 
   // Access token
-  public static final String ACCESS_TOKEN = RESTParams.IDENTITY_TOKEN;
+  public static final String ACCESS_TOKEN = RESTParams.ACCESS_TOKEN;
 
   // Callbacks
   public static final String CALLBACKS = "callbacks";

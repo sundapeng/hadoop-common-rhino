@@ -38,8 +38,8 @@ private static MiniHas has;
   @BeforeClass
   public static void setUp() throws Exception {
     has = new MiniHas.Builder()
-              .setIdentityRpcAddr("localhost:8771")
-              .setAuthoRpcAddr("localhost:8772")
+              .setIdentityRpcAddr("localhost:8781")
+              .setAuthoRpcAddr("localhost:8782")
               .build();
     has.waitHasUp();
   }
@@ -54,8 +54,8 @@ private static MiniHas has;
   @Test
   public void tesIdentityToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8771");
-    conf.set("hadoop.security.authorization.server.rpc-address", "http://localhost:8772");
+    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8781");
+    conf.set("hadoop.security.authorization.server.rpc-address", "http://localhost:8782");
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
     IdentityResponse response = client.authenticate(request);
@@ -78,8 +78,8 @@ private static MiniHas has;
   @Test
   public void testAccessToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8771");
-    conf.set("hadoop.security.authorization.server.rpc-address", "http://localhost:8772");
+    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8781");
+    conf.set("hadoop.security.authorization.server.rpc-address", "http://localhost:8782");
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
     IdentityResponse response = client.authenticate(request);

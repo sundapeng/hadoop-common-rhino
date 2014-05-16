@@ -46,8 +46,8 @@ public class TestIdentityRestServices  {
   @BeforeClass
   public static void setUp() throws Exception {
     has = new MiniHas.Builder()
-              .setIdentityHttpAddr("localhost:8776")
-              .setAuthoHttpAddr("localhost:8777")
+              .setIdentityHttpAddr("localhost:8786")
+              .setAuthoHttpAddr("localhost:8787")
               .build();
     has.waitHasUp();
   }
@@ -64,7 +64,7 @@ public class TestIdentityRestServices  {
     HttpURLConnection conn = null;
     InputStream in = null;
     try {
-      URL url = new URL("http://localhost:8776/ws/v1/hello");
+      URL url = new URL("http://localhost:8786/ws/v1/hello");
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("GET");
@@ -100,7 +100,7 @@ public class TestIdentityRestServices  {
     InputStream in = null;
     try {
       byte[] content = JsonHelper.toJsonString("echo", "hello").getBytes("UTF-8");
-      URL url = new URL("http://localhost:8776/ws/v1/authenticate");
+      URL url = new URL("http://localhost:8786/ws/v1/authenticate");
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("POST");
@@ -138,7 +138,7 @@ public class TestIdentityRestServices  {
   
   @Test
   public void testGetSecrets() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:8776","http://localhost:8777");
+    HASClient client = new HASClientImpl("http://localhost:8786","http://localhost:8787");
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -165,7 +165,7 @@ public class TestIdentityRestServices  {
       String contentString =
           RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "=" + protocolEncode;
       byte[] content = contentString.getBytes("UTF-8");
-      URL url = new URL("http://localhost:8776/ws/v1/getSecrets");
+      URL url = new URL("http://localhost:8786/ws/v1/getSecrets");
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("POST");

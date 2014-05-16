@@ -235,9 +235,9 @@ public class AuthenticatedURL {
       conn = connConfigurator.configure(conn);
     }
     if (authenticator instanceof AbstractAuthenticator) {
-      injectToken(conn, token);
-    } else {
       injectCookies(conn, ((AbstractAuthenticator) authenticator).getAuthenticatorCookies());
+    } else {
+      injectToken(conn, token);
     }
     
     return conn;

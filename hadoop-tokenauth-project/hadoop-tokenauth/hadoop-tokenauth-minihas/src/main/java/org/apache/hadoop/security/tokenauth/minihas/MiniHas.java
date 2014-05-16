@@ -57,7 +57,7 @@ public class MiniHas {
   private File base_dir;
   private boolean isFailed = false;
   private boolean asFailed = false;
-  private static final String MINI_TOKENAUTH_BASEDIR = "/tmp.tokeauth.basedir";
+  private static final String MINI_TOKENAUTH_BASEDIR = "test.tokeauth.basedir";
   private static final String AUTHO_POLICY_SCRIPT_FILE_NAME = 
       MINI_TOKENAUTH_BASEDIR + "/authorization-policy-script";
   private static final String AUTHO_POLICY_SCRIPT_FILE = 
@@ -83,10 +83,10 @@ public class MiniHas {
   private static final String HADOOP_SECURITY_TOKENAUTH_AUTHENTICATOR_CONTROLFLAG_DEFAULT = 
       "required";
   private static final String HADOOP_SECURITY_AUTHENTICATION_DEFAULT = "tokenauth";
-  private static final String IDENTITY_HTTP_ADDR_DEFAULT = "localhost:8776";
-  private static final String AUTHORIZATION_HTTP_ADDR_DEFAULT = "localhost:8777";
-  private static final String IDENTITY_RPC_ADDR_DEFAULT = "localhost:8771";
-  private static final String AUTHORIZATION_RPC_ADDR_DEFAULT = "localhost:8772";
+  private static final String IDENTITY_HTTP_ADDR_DEFAULT = "localhost:8786";
+  private static final String AUTHORIZATION_HTTP_ADDR_DEFAULT = "localhost:8787";
+  private static final String IDENTITY_RPC_ADDR_DEFAULT = "localhost:8781";
+  private static final String AUTHORIZATION_RPC_ADDR_DEFAULT = "localhost:8782";
   private static final Log LOG = LogFactory.getLog(MiniHas.class);
   
   /**
