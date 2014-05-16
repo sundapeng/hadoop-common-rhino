@@ -285,7 +285,7 @@ public class CommonConfigurationKeysPublic {
   
   /** token auth identity/authorization server **/
   public static final String HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_KEY =
-      "hadoop.security.saslproperties.resolver.class";
+      "hadoop.security.identity.server.rpc-address";
   public static final int HADOOP_SECURITY_IDENTITY_SERVER_RPC_PORT_DEFAULT = 8771;
   public static final String HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_DEFAULT =
       "0.0.0.0:" + HADOOP_SECURITY_IDENTITY_SERVER_RPC_PORT_DEFAULT;
