@@ -835,8 +835,11 @@ public final class HttpServer2 implements FilterContainer {
     if (authnFile != null && !authnFile.isEmpty()){
       params.put("tokenauth.authnfile", authnFile);
     }
-    // HttpConfig.isSecure() is removed.
-    // params.put("tokenauth.http.secured", HttpConfig.isSecure() ? "true" : "false");
+
+    params.put("tokenauth.http.secured", conf.getBoolean(
+        CommonConfigurationKeys.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_KEY,
+        CommonConfigurationKeys.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_DEFAULT) ?
+        "true" : "false");
     params.put(AuthenticationFilter.AUTH_TYPE,
         TokenAuthAuthenticationHandler.class.getName());
     params.put("tokenauth.identity.server.http-address", conf.get(identityServerKey));

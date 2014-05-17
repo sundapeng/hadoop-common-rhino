@@ -127,7 +127,8 @@ public class NameNodeHttpServer {
                 DFSConfigKeys.DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_USER_NAME_KEY))
         .setIdentityServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)
         .setAuthorizationServerAddressKey(
-            DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY);
+            DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY)
+        .setAuthnFileConfKey(DFSConfigKeys.DFS_NAMENODE_AUTHENTICATION_FILE_KEY);
 
     httpServer = builder.build();
 
