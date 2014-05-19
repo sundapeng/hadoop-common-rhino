@@ -17,7 +17,7 @@
  */
 
 package org.apache.hadoop.security.tokenauth.jaas;
-
+/*
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -29,6 +29,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.tokenauth.has.HASConfiguration;
 import org.apache.hadoop.security.tokenauth.jaas.auth.module.LdapConnector;
 import org.apache.hadoop.security.tokenauth.token.Attribute;
+*/
 import org.junit.Test;
 
 public class TestLdapConnector {

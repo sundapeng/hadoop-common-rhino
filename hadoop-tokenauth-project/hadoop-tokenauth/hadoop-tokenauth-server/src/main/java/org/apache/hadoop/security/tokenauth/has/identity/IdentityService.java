@@ -21,12 +21,9 @@ package org.apache.hadoop.security.tokenauth.has.identity;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.PublicKey;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.crypto.SecretKey;
 import javax.security.auth.callback.Callback;

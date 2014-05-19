@@ -19,11 +19,8 @@
 package org.apache.hadoop.security.tokenauth.has.identity;
 
 import java.io.IOException;
-import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.tokenauth.token.InvalidTokenException;
-import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 
 public abstract class IdentityTokenStorage {
   

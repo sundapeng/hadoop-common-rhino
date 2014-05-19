@@ -63,7 +63,6 @@ public class SecretsProtocolClientSideTranslatorPB
     return rpcProxy;
   }
 
-
   @Override
   public Secrets getSecrets(byte[] identityToken, String protocol) throws
       IOException {

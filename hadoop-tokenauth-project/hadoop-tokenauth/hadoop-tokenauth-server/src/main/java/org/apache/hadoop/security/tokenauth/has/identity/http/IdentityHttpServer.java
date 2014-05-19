@@ -53,6 +53,7 @@ public class IdentityHttpServer {
     conf.set("hadoop.http.authentication.type", "simple");
   }
   
+  @SuppressWarnings("deprecation")
   public void start() throws IOException {
     final InetSocketAddress bindAddr = getAddress(conf);
     httpServer = new HttpServer2.Builder().setName("identity")

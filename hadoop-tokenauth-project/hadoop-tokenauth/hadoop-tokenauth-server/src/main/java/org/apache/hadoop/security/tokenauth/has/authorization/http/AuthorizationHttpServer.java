@@ -28,7 +28,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
-import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.tokenauth.api.web.WEBParams;
@@ -54,6 +53,7 @@ public class AuthorizationHttpServer {
     conf.set("hadoop.http.authentication.type", "simple");
   }
   
+  @SuppressWarnings("deprecation")
   public void start() throws IOException {
     final InetSocketAddress bindAddr = getAddress(conf);
     httpServer = new HttpServer2.Builder().setName("authorization")

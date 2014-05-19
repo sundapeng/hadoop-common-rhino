@@ -42,7 +42,6 @@ public class TestJsonHelper {
   @Test
   public void testPrivateKey() throws Exception {
     PrivateKey pk = KeyPairGenerator.getInstance("DSA").generateKeyPair().getPrivate();
-    //System.out.println(JsonHelper.toJsonString(pk).toJSONString());
     assertTrue(Arrays.equals(JsonHelper.toPrivateKey(JsonHelper.toJsonString(pk).
         toJSONString()).getEncoded(), pk.getEncoded()));
   }
@@ -50,6 +49,11 @@ public class TestJsonHelper {
   @Test
   public void testPrivateKeyWithNULL() throws Exception {
     PrivateKey pk = new PrivateKey() {
+      /**
+       * 
+       */
+      private static final long serialVersionUID = 1L;
+
       @Override
       public String getAlgorithm() {
         return null;
@@ -65,7 +69,6 @@ public class TestJsonHelper {
         return null;
       }
     };
-    //System.out.println(JsonHelper.toJsonString(pk));
     try {
       JsonHelper.toPrivateKey(JsonHelper.toJsonString(pk).toJSONString());
     } catch (NullPointerException e) {
@@ -78,7 +81,6 @@ public class TestJsonHelper {
   @Test
   public void testPublicKey() throws Exception {
     PublicKey pk = KeyPairGenerator.getInstance("DSA").generateKeyPair().getPublic();
-    //System.out.println(JsonHelper.toJsonString(pk).toJSONString());
     assertTrue(Arrays.equals(JsonHelper.toPublicKey(JsonHelper.toJsonString(pk).
         toJSONString()).getEncoded(), pk.getEncoded()));
   }
@@ -87,7 +89,6 @@ public class TestJsonHelper {
   @Test
   public void testSecretKey() throws Exception {
     SecretKey pk = KeyGenerator.getInstance("AES").generateKey();
-    //System.out.println(JsonHelper.toJsonString(pk).toJSONString());
     assertTrue(Arrays.equals(JsonHelper.toSecretKey(JsonHelper.toJsonString(pk).
         toJSONString()).getEncoded(), pk.getEncoded()));
   }
@@ -106,6 +107,7 @@ public class TestJsonHelper {
         secrets.getSecretKey().getEncoded()));
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public  void testJSON() throws Exception {
     JSONObject jsonObject = new JSONObject();
@@ -115,7 +117,7 @@ public class TestJsonHelper {
     System.out.println(jsonObject.get("hello2"));
     System.out.println(jsonObject.containsKey("hello2"));
 
-    jsonObject.put("hello2",null);
+    jsonObject.put("hello2", "world2");
     System.out.println(jsonObject.get("hello2"));
     System.out.println(jsonObject.containsKey("hello2"));
   }

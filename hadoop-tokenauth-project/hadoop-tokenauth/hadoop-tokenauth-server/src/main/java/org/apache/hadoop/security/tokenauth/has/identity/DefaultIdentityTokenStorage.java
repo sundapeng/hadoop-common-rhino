@@ -102,6 +102,7 @@ public class DefaultIdentityTokenStorage extends IdentityTokenStorage {
     LOG.debug("Wrote tokens to disk.");
   }
 
+  @SuppressWarnings("unchecked")
   private void readFromDisk() throws IOException, ClassNotFoundException {
     synchronized(tokenFilePath){
       FileInputStream stream = new FileInputStream(tokenFilePath);
