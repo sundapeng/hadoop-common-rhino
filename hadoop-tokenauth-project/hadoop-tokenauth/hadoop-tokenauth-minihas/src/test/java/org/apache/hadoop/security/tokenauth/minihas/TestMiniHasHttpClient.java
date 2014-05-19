@@ -24,6 +24,7 @@ import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.minihas.MiniHas;
 import org.apache.hadoop.security.tokenauth.token.Token;
+import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
@@ -93,6 +94,57 @@ public class TestMiniHasHttpClient {
     Token identityToken = new IdentityToken(identityTokenBytes);
     byte[] ac = client.getAccessToken(identityToken, "root");
     System.out.println(ac.length);
+  }
+  
+  @Test
+  public void tesRenewToken() throws Exception {
+    HASClient client = new HASClientImpl("http://localhost:8786", null);
+    IdentityRequest request = new IdentityRequest(null, null);
+    IdentityResponse response = client.authenticate(request);
+
+    for (Callback cb : response.getRequiredCallbacks()) {
+      if (cb instanceof NameCallback) {
+        ((NameCallback) cb).setName("root");
+      }
+    }
+    request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
+    response = client.authenticate(request);
+    byte[] tokenBytes = response.getIdentityToken();
+    
+    IdentityToken token = (IdentityToken) TokenFactory.get().createIdentityToken(
+        null, tokenBytes);
+    System.out.println(token.getUser());
+    System.out.println(token.getId());
+    System.out.println(token.getExpiryTime());
+    
+    IdentityToken newToken = (IdentityToken)client.renewToken(token);
+    System.out.println(newToken.getUser());
+    System.out.println(newToken.getId());
+    System.out.println(newToken.getExpiryTime());
+  }
+  
+  @Test
+  public void tesCancelToken() throws Exception {
+    HASClient client = new HASClientImpl("http://localhost:8786", null);
+    IdentityRequest request = new IdentityRequest(null, null);
+    IdentityResponse response = client.authenticate(request);
+
+    for (Callback cb : response.getRequiredCallbacks()) {
+      if (cb instanceof NameCallback) {
+        ((NameCallback) cb).setName("root");
+      }
+    }
+    request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
+    response = client.authenticate(request);
+    byte[] tokenBytes = response.getIdentityToken();
+    
+    IdentityToken token = (IdentityToken) TokenFactory.get().createIdentityToken(
+        null, tokenBytes);
+    System.out.println(token.getUser());
+    System.out.println(token.getId());
+    System.out.println(token.getExpiryTime());
+    
+    client.cancelToken(token);
   }
 
 }

@@ -57,6 +57,7 @@ public class MiniHas {
   private File base_dir;
   private boolean isFailed = false;
   private boolean asFailed = false;
+
   private static final String MINI_TOKENAUTH_BASEDIR = "test.tokeauth.basedir";
   private static final String AUTHO_POLICY_SCRIPT_FILE_NAME = MINI_TOKENAUTH_BASEDIR
       + "/authorization-policy-script";
@@ -113,6 +114,7 @@ public class MiniHas {
           AUTHO_POLICY_SCRIPT_FILE_NAME);
       propMap.put(IDENTITY_TOKEN_PERSISTENT_FILE_KEY, IDENTITYTOKEN_PERSISTENT_FILE);
       propMap.put(IDENTITY_TOKEN_PERSISTENT_ON_EXIT, "false");
+      propMap.put(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, "root");
 
       // hadoop-core configuration
       propMap.put(HADOOP_SECURITY_AUTHENTICATION, HADOOP_SECURITY_AUTHENTICATION_DEFAULT);
@@ -216,6 +218,14 @@ public class MiniHas {
       return this;
     }
 
+    /**
+     * Default: root
+     */
+    public Builder setIdentityAdmin(String val) {
+      propMap.put(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, val);
+      return this;
+    }
+    
     /**
      * Other Property
      */

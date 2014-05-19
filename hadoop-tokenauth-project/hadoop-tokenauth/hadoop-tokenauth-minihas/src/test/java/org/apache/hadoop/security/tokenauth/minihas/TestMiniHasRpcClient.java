@@ -23,9 +23,15 @@ import javax.security.auth.callback.NameCallback;
 import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
+import org.apache.hadoop.security.tokenauth.has.HASConfiguration;
 import org.apache.hadoop.security.tokenauth.rpc.HASRpcClient;
+import org.apache.hadoop.security.tokenauth.secrets.Secrets;
+import org.apache.hadoop.security.tokenauth.secrets.SecretsManager;
+import org.apache.hadoop.security.tokenauth.token.Attribute;
 import org.apache.hadoop.security.tokenauth.token.Token;
+import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
+import org.apache.hadoop.util.Time;
 import org.apache.hadoop.conf.Configuration;
 
 import org.junit.AfterClass;
@@ -40,6 +46,7 @@ private static MiniHas has;
     has = new MiniHas.Builder()
               .setIdentityRpcAddr("localhost:8781")
               .setAuthoRpcAddr("localhost:8782")
+              .setIdentityAdmin("root")
               .build();
     has.waitHasUp();
   }
@@ -101,6 +108,64 @@ private static MiniHas has;
     Token identityToken = new IdentityToken(identityTokenBytes);
     byte[] ac = client.getAccessToken(identityToken, "root");
     System.out.println(ac.length);
+  }
+  
+  @Test
+  public void tesRenewToken() throws Exception {
+    Configuration conf = new Configuration();
+    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8781");
+    conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, "root");
+    HASClient client = new HASRpcClient(conf);
+    IdentityRequest request = new IdentityRequest(null,null);
+    IdentityResponse response = client.authenticate(request);
+
+    for (Callback cb : response.getRequiredCallbacks()) {
+      if (cb instanceof NameCallback) {
+        ((NameCallback) cb).setName("root");
+      }
+    }
+    request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
+    response = client.authenticate(request);
+    byte[] tokenBytes = response.getIdentityToken();
+    
+    IdentityToken token = (IdentityToken) TokenFactory.get().createIdentityToken(
+        null, tokenBytes);
+    System.out.println(token.getUser());
+    System.out.println(token.getId());
+    System.out.println(token.getExpiryTime());
+    
+    IdentityToken newToken = (IdentityToken)client.renewToken(token);
+    System.out.println(newToken.getUser());
+    System.out.println(newToken.getId());
+    System.out.println(newToken.getExpiryTime());
+  }
+  
+  @Test
+  public void tesCancelToken() throws Exception {
+    Configuration conf = new Configuration();
+    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8781");
+    conf.set("hadoop.security.authorization.server.rpc-address", "http://localhost:8782");
+    conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, "root");
+    HASClient client = new HASRpcClient(conf);
+    IdentityRequest request = new IdentityRequest(null,null);
+    IdentityResponse response = client.authenticate(request);
+
+    for (Callback cb : response.getRequiredCallbacks()) {
+      if (cb instanceof NameCallback) {
+        ((NameCallback) cb).setName("root");
+      }
+    }
+    request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
+    response = client.authenticate(request);
+    byte[] tokenBytes = response.getIdentityToken();
+    
+    IdentityToken token = (IdentityToken) TokenFactory.get().createIdentityToken(
+        null, tokenBytes);
+    System.out.println(token.getUser());
+    System.out.println(token.getId());
+    System.out.println(token.getExpiryTime());
+    
+    client.cancelToken(token);
   }
 
 }
