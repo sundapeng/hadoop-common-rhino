@@ -282,32 +282,32 @@ public class CommonConfigurationKeysPublic {
   /** Class to override Sasl Properties for a connection */
   public static final String  HADOOP_SECURITY_SASL_PROPS_RESOLVER_CLASS =
       "hadoop.security.saslproperties.resolver.class";
-  
+
   /** token auth identity/authorization server **/
   public static final String HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_KEY =
       "hadoop.security.identity.server.rpc-address";
   public static final int HADOOP_SECURITY_IDENTITY_SERVER_RPC_PORT_DEFAULT = 8771;
   public static final String HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_DEFAULT =
       "0.0.0.0:" + HADOOP_SECURITY_IDENTITY_SERVER_RPC_PORT_DEFAULT;
-  
-  public static final String HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY = 
+
+  public static final String HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY =
       "hadoop.security.identity.server.http-address";
   public static final int HADOOP_SECURITY_IDENTITY_SERVER_HTTP_PORT_DEFAULT = 8776;
   public static final String HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_DEFAULT = 
       "0.0.0.0:" + HADOOP_SECURITY_IDENTITY_SERVER_HTTP_PORT_DEFAULT;
-  
+
   public static final String HADOOP_SECURITY_AUTHORIZATION_SERVER_RPC_ADDRESS_KEY =
       "hadoop.security.authorization.server.rpc-address";
   public static final int HADOOP_SECURITY_AUTHORIZATION_SERVER_RPC_PORT_DEFAULT = 8772;
   public static final String HADOOP_SECURITY_AUTHORIZATION_SERVER_RPC_ADDRESS_DEFAULT =
       "0.0.0.0:" + HADOOP_SECURITY_AUTHORIZATION_SERVER_RPC_PORT_DEFAULT;
-  
+
   public static final String HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY =
       "hadoop.security.authorization.server.http-address";
   public static final int HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_PORT_DEFAULT = 8777;
   public static final String HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_DEFAULT =
       "0.0.0.0:" + HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_PORT_DEFAULT;
-  
+
   public static final String HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_KEY =
       "hadoop.security.tokenauth.server.ssl.enabled";
   public static final boolean HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_DEFAULT =

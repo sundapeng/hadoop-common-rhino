@@ -174,8 +174,8 @@ public final class HttpServer2 implements FilterContainer {
     private boolean findPort;
 
     private String hostName;
-	
-	/* token auth */
+
+    /* token auth */
     String tokenAuthUsernameConfKey = null;
     String authnFileConfKey = null; 
     String identityServerAddressKey = null;
@@ -283,19 +283,19 @@ public final class HttpServer2 implements FilterContainer {
       this.tokenAuthUsernameConfKey = tokenAuthUsernameConfKey;
       return this;
     }
-    
+
     public Builder setAuthnFileConfKey(String authnFileConfKey) {
       this.authnFileConfKey = authnFileConfKey;
       return this;
     }
-    
+
     public Builder setIdentityServerAddressKey(String identityServerAddressKey){
       this.identityServerAddressKey = identityServerAddressKey;
       return this;
     }
 
     public Builder setAuthorizationServerAddressKey(String authorizationServerAddressKey){
-      this.authorizationServerAddressKey=authorizationServerAddressKey;
+      this.authorizationServerAddressKey = authorizationServerAddressKey;
       return this;
     }
 
@@ -320,7 +320,7 @@ public final class HttpServer2 implements FilterContainer {
       HttpServer2 server = new HttpServer2(this);
 
       if (this.securityEnabled) {
-        if(UserGroupInformation.isTokenAuthEnabled()){
+        if (UserGroupInformation.isTokenAuthEnabled()) {
           server.initTokenAuth(conf, hostName, tokenAuthUsernameConfKey, authnFileConfKey,
               identityServerAddressKey, authorizationServerAddressKey);
         } else {
@@ -823,29 +823,28 @@ public final class HttpServer2 implements FilterContainer {
                  AuthenticationFilter.class.getName(), params, null);
   }
   
-  protected void initTokenAuth(Configuration conf, String hostName,
-      String usernameConfKey, String authnFileConfKey, String identityServerKey, String authrizationServerKey) throws IOException {
+  protected void initTokenAuth(Configuration conf, String hostName, String usernameConfKey,
+      String authnFileConfKey, String identityServerKey, String authrizationServerKey)
+      throws IOException {
     Map<String, String> params = new HashMap<String, String>();
     String principalInConf = conf.get(usernameConfKey);
     if (principalInConf != null && !principalInConf.isEmpty()) {
-      params.put("tokenauth.principal", 
-          SecurityUtil.getServerPrincipal(principalInConf, hostName));
+      params.put("tokenauth.principal", SecurityUtil.getServerPrincipal(principalInConf, hostName));
     }
     String authnFile = conf.get(authnFileConfKey);
-    if (authnFile != null && !authnFile.isEmpty()){
+    if (authnFile != null && !authnFile.isEmpty()) {
       params.put("tokenauth.authnfile", authnFile);
     }
 
     params.put("tokenauth.http.secured", conf.getBoolean(
         CommonConfigurationKeys.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_KEY,
-        CommonConfigurationKeys.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_DEFAULT) ?
-        "true" : "false");
-    params.put(AuthenticationFilter.AUTH_TYPE,
-        TokenAuthAuthenticationHandler.class.getName());
+        CommonConfigurationKeys.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_DEFAULT) ? "true"
+        : "false");
+    params.put(AuthenticationFilter.AUTH_TYPE, TokenAuthAuthenticationHandler.class.getName());
     params.put("tokenauth.identity.server.http-address", conf.get(identityServerKey));
     params.put("tokenauth.authorization.server.http-address", conf.get(authrizationServerKey));
-    defineFilter(webAppContext, TOKENAUTH_FILTER,
-                 AuthenticationFilter.class.getName(), params, null);
+    defineFilter(webAppContext, TOKENAUTH_FILTER, AuthenticationFilter.class.getName(), params,
+        null);
   }
 
   /**

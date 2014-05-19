@@ -35,48 +35,47 @@ import org.apache.hadoop.security.tokenauth.has.identity.IdentityService;
 import org.apache.hadoop.security.tokenauth.has.identity.rest.IdentityRESTServices;
 
 public class IdentityHttpServer {
-  public static final Log LOG = LogFactory.getLog(
-      IdentityHttpServer.class);
-  
+  public static final Log LOG = LogFactory.getLog(IdentityHttpServer.class);
+
   public static final String IDENTITY_ATTRIBUTE_KEY = "localidentity";
   public static final String CURRENT_CONF = "current.conf";
-  
+
   private HttpServer2 httpServer;
   private final Configuration conf;
   private final IdentityService identityService;
-  
+
   private int infoPort;
-  
+
   public IdentityHttpServer(Configuration conf, IdentityService identityService) {
     this.conf = conf;
     this.identityService = identityService;
     conf.set("hadoop.http.authentication.type", "simple");
   }
-  
+
   @SuppressWarnings("deprecation")
   public void start() throws IOException {
     final InetSocketAddress bindAddr = getAddress(conf);
     httpServer = new HttpServer2.Builder().setName("identity")
-        .addEndpoint(URI.create("http://"+NetUtils.getHostPortString(bindAddr)))
+        .addEndpoint(URI.create("http://" + NetUtils.getHostPortString(bindAddr)))
         .setFindPort(false).setConf(conf).setSecurityEnabled(false).build();
     httpServer.setAttribute(IDENTITY_ATTRIBUTE_KEY, identityService);
     httpServer.setAttribute(CURRENT_CONF, conf);
-    
+
     final String pathSpec = IdentityRESTServices.PATH_PREFIX + "/*";
     // add identity rest packages
-    httpServer.addJerseyResourcePackage(
-        IdentityRESTServices.class.getPackage().getName(), pathSpec);
-    
-    httpServer.addInternalServlet("authenticate", 
-        WEBParams.AUTHENTICATE_SERVLET_PATH_SPEC, AuthenticationServlet.class, false);
-    
+    httpServer
+        .addJerseyResourcePackage(IdentityRESTServices.class.getPackage().getName(), pathSpec);
+
+    httpServer.addInternalServlet("authenticate", WEBParams.AUTHENTICATE_SERVLET_PATH_SPEC,
+        AuthenticationServlet.class, false);
+
     httpServer.start();
-    
+
     infoPort = httpServer.getPort();
 
     LOG.info("Identity Web-server up at: " + bindAddr + ":" + infoPort);
   }
-  
+
   public void stop() throws IOException {
     if (httpServer != null) {
       try {
@@ -86,11 +85,11 @@ public class IdentityHttpServer {
       }
     }
   }
-  
+
   public boolean isAlive() {
     return httpServer != null && httpServer.isAlive();
   }
-  
+
   /**
    * Return the actual address bound to by the running server.
    */
@@ -102,23 +101,22 @@ public class IdentityHttpServer {
     assert addr.getPort() != 0;
     return addr;
   }
-  
+
   private static InetSocketAddress getAddress(Configuration conf) {
     return NetUtils.createSocketAddr(getIdentityHttpServerAddress(conf),
         CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_PORT_DEFAULT,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY);
   }
-  
+
   private static String getIdentityHttpServerAddress(Configuration conf) {
-    return conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY, 
+    return conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_DEFAULT);
   }
-  
-  public static IdentityService getServiceFromContext(ServletContext context)
-      throws IOException {
-    return (IdentityService)context.getAttribute(IDENTITY_ATTRIBUTE_KEY); 
+
+  public static IdentityService getServiceFromContext(ServletContext context) throws IOException {
+    return (IdentityService) context.getAttribute(IDENTITY_ATTRIBUTE_KEY);
   }
-  
+
   public static Configuration getConfFromContext(ServletContext context) {
     return (Configuration) context.getAttribute(CURRENT_CONF);
   }

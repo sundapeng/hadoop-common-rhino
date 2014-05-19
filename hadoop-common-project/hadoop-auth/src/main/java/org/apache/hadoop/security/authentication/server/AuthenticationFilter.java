@@ -359,7 +359,7 @@ public class AuthenticationFilter implements Filter {
             token = null;
           }
         }
-        
+
         if (token == null) {
           if (LOG.isDebugEnabled()) {
             LOG.debug("Request [{}] triggering authentication", getRequestURL(httpRequest));

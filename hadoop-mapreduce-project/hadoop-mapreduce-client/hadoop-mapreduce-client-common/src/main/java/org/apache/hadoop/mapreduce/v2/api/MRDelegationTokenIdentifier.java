@@ -40,7 +40,7 @@ public class MRDelegationTokenIdentifier extends AbstractDelegationTokenIdentifi
  
   public MRDelegationTokenIdentifier() {
   }
-  
+
   /**
    * Create a new delegation token identifier
    * @param owner the effective username of the token owner

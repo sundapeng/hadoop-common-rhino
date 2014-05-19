@@ -42,32 +42,35 @@ import org.apache.hadoop.security.tokenauth.secrets.Secrets;
 
 import com.google.protobuf.BlockingService;
 
-
 public class IdentityRPCServer implements IdentityServiceProtocals {
   private final IdentityService identityService;
   private RPC.Server server;
 
-  public IdentityRPCServer(Configuration conf, IdentityService 
-      identityService, PolicyProvider policy) throws IOException {
+  public IdentityRPCServer(Configuration conf, IdentityService identityService,
+      PolicyProvider policy) throws IOException {
     this.identityService = identityService;
-    /* Identity RPC server is authentication root, use simple authentication*/
-    conf.set(CommonConfigurationKeysPublic
-        .HADOOP_SECURITY_AUTHENTICATION, "simple");
+    /* Identity RPC server is authentication root, use simple authentication */
+    conf.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION, "simple");
 
     RPC.setProtocolEngine(conf, IdentityServiceProtocolPB.class, ProtobufRpcEngine.class);
-    IdentityServiceProtocolServerSideTranslatorPB translator = 
-        new IdentityServiceProtocolServerSideTranslatorPB(this);
+    IdentityServiceProtocolServerSideTranslatorPB translator = new IdentityServiceProtocolServerSideTranslatorPB(
+        this);
 
-    BlockingService identityProtocolService = IdentityServiceProtocolProtos.
-        IdentityService.newReflectiveBlockingService(translator);
-    BlockingService secretsProtocolService = SecretsProtocolProtos.
-        IdentitySecretsService.newReflectiveBlockingService(translator);
+    BlockingService identityProtocolService = IdentityServiceProtocolProtos.IdentityService
+        .newReflectiveBlockingService(translator);
+    BlockingService secretsProtocolService = SecretsProtocolProtos.IdentitySecretsService
+        .newReflectiveBlockingService(translator);
 
     InetSocketAddress bindAddr = getAddress(conf);
-    this.server = new RPC.Builder(conf).setProtocol(IdentityServiceProtocolPB.class)
-        .setInstance(identityProtocolService).setBindAddress(bindAddr.getHostName()).setPort(bindAddr.getPort())
-        .setNumHandlers(conf.getInt(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_LISTENER_THREAD_COUNT_KEY, 
-            HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_LISTENER_THREAD_COUNT_DEFAULT)).setVerbose(false).build();
+    this.server = new RPC.Builder(conf)
+        .setProtocol(IdentityServiceProtocolPB.class)
+        .setInstance(identityProtocolService)
+        .setBindAddress(bindAddr.getHostName())
+        .setPort(bindAddr.getPort())
+        .setNumHandlers(conf.getInt(
+            HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_LISTENER_THREAD_COUNT_KEY,
+            HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_LISTENER_THREAD_COUNT_DEFAULT))
+        .setVerbose(false).build();
     addPBProtocol(conf, SecretsProtocolPB.class, secretsProtocolService, server);
 
     // set service-level authorization security policy
@@ -76,9 +79,9 @@ public class IdentityRPCServer implements IdentityServiceProtocals {
     }
 
   }
-  
-  void addPBProtocol(Configuration conf, Class<?> protocol,
-      BlockingService service, RPC.Server server) throws IOException {
+
+  void addPBProtocol(Configuration conf, Class<?> protocol, BlockingService service,
+      RPC.Server server) throws IOException {
     RPC.setProtocolEngine(conf, protocol, ProtobufRpcEngine.class);
     server.addProtocol(RPC.RpcKind.RPC_PROTOCOL_BUFFER, protocol, service);
   }
@@ -86,7 +89,7 @@ public class IdentityRPCServer implements IdentityServiceProtocals {
   public void start() {
     this.server.start();
   }
-  
+
   public boolean isAlive() {
     return server != null;
   }
@@ -94,17 +97,18 @@ public class IdentityRPCServer implements IdentityServiceProtocals {
   public InetSocketAddress getAddress() {
     return server.getListenerAddress();
   }
-  
+
   public void join() throws InterruptedException {
     server.join();
   }
-  
+
   public void stop() {
     server.stop();
   }
-  
+
   private static InetSocketAddress getAddress(Configuration conf) {
-    String addr = conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_KEY, 
+    String addr = conf.get(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_KEY,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_DEFAULT);
     return NetUtils.createSocketAddr(addr,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_RPC_PORT_DEFAULT,
@@ -118,7 +122,7 @@ public class IdentityRPCServer implements IdentityServiceProtocals {
 
   @Override
   public Secrets getSecrets(byte[] identityToken, String protocol) throws IOException {
-    return identityService.getSecrets(identityToken,protocol);
+    return identityService.getSecrets(identityToken, protocol);
   }
 
   @Override
@@ -127,8 +131,7 @@ public class IdentityRPCServer implements IdentityServiceProtocals {
   }
 
   @Override
-  public void cancelToken(byte[] identityToken, long tokenId)
-      throws IOException {
+  public void cancelToken(byte[] identityToken, long tokenId) throws IOException {
     identityService.cancelToken(identityToken, tokenId);
   }
 }

@@ -478,7 +478,7 @@ public class UserGroupInformation {
         BASIC_JAAS_OPTIONS.put("debug", "true");
       }
     }
-    
+
     private static final AppConfigurationEntry OS_SPECIFIC_LOGIN =
       new AppConfigurationEntry(OS_LOGIN_MODULE_NAME,
                                 LoginModuleControlFlag.REQUIRED,
@@ -567,7 +567,7 @@ public class UserGroupInformation {
     
     private static final AppConfigurationEntry[] AUTHNFILE_TOKENAUTH_CONF =
       new AppConfigurationEntry[]{AUTHNFILE_TOKENAUTH_LOGIN, HADOOP_LOGIN};
-    
+
     @Override
     public AppConfigurationEntry[] getAppConfigurationEntry(String appName) {
       if (SIMPLE_CONFIG_NAME.equals(appName)) {
@@ -632,7 +632,7 @@ public class UserGroupInformation {
       t.setContextClassLoader(oldCCL);
     }
   }
-  
+
   private static CallbackHandler getCallbackHandler() {
     if (isTokenAuthEnabled()) {
       return new DefaultTokenAuthCallbackHandler(conf);
@@ -640,7 +640,7 @@ public class UserGroupInformation {
     
     return null;
   }
-  
+
   public static Authenticator getAuthenticator() {
     if (isTokenAuthEnabled()) {
       return new TokenAuthAuthenticator(SecurityUtil.getHASClient(conf));
@@ -938,7 +938,7 @@ public class UserGroupInformation {
     // logged in ugi if it's different
     loginUser = ugi;
   }
-  
+
   /**
    * Is this user logged in from a keytab file?
    * @return true if the credentials are from a keytab file.
@@ -1155,7 +1155,7 @@ public class UserGroupInformation {
     LOG.info("Login successful for user " + tokenAuthPrincipal
         + " using authentication file " + tokenAuthFile);
   }
-  
+
   /**
    * Re-login a user from authentication file is Identity token is expired or is close to expiry.
    * @throws IOException
@@ -1173,7 +1173,7 @@ public class UserGroupInformation {
     }
     reloginFromAuthnFile();
   }
-  
+
   /**
    * Re-login a user from keytab if TGT is expired or is close to expiry.
    * 
@@ -1228,7 +1228,7 @@ public class UserGroupInformation {
     if (login == null || tokenAuthFile == null) {
       throw new IOException("loginFromAuthnFile must be done first");
     }
-   
+
     long start = 0;
     // register most recent relogin attempt
     user.setLastLogin(now);
@@ -1256,7 +1256,7 @@ public class UserGroupInformation {
           " from authnFile " + tokenAuthFile, le);
    }
   }
-  
+
   /**
    * Re-Login a user in from the token cache.  This
    * method assumes that login had happened already.
@@ -1295,7 +1295,7 @@ public class UserGroupInformation {
       throw new IOException("Login failure for " + getUserName(), le);
     } 
   }
-  
+
   @InterfaceAudience.Public
   @InterfaceStability.Evolving
   public synchronized void reloginForTokenAuth()
@@ -1306,7 +1306,7 @@ public class UserGroupInformation {
       reloginFromTokenCache();
     }
   }
-  
+
   /**
    * Log a user in from a authentication file. Loads a user identity from an authentication
    * file and login them in. This new user does not affect the currently
@@ -1337,14 +1337,14 @@ public class UserGroupInformation {
       LoginContext login = newLoginContext(
           HadoopConfiguration.AUTHNFILE_TOKENAUTH_CONFIG_NAME, subject,
           new HadoopConfiguration());
-       
+
       start = Time.now();
       login.login();
       metrics.loginSuccess.add(Time.now() - start);
       UserGroupInformation newLoginUser = new UserGroupInformation(subject);
       newLoginUser.setLogin(login);
       newLoginUser.setAuthenticationMethod(AuthenticationMethod.TOKENAUTH);
-      
+
       return newLoginUser;
     } catch (LoginException le) {
       if (start > 0) {
@@ -1559,7 +1559,7 @@ public class UserGroupInformation {
         getPrivateCredentials(Secrets.class).iterator();
     return iterator.hasNext() ? iterator.next() : null;
   }
-  
+
   @InterfaceAudience.Public
   @InterfaceStability.Evolving
   public synchronized org.apache.hadoop.security.tokenauth.token.Token 
@@ -1824,7 +1824,7 @@ public class UserGroupInformation {
     }
     return subject.getPrivateCredentials().add(token);
   }
-  
+
   public synchronized org.apache.hadoop.security.tokenauth.token.Token
   getToken() {
     if (!subject.getPrivateCredentials(
@@ -1925,7 +1925,7 @@ public class UserGroupInformation {
       }
       
       Set<String> result = new LinkedHashSet<String>
-	      (groups.getGroups(getShortUserName()));
+          (groups.getGroups(getShortUserName()));
       return result.toArray(new String[result.size()]);
     } catch (IOException ie) {
       LOG.warn("No groups available for user " + getShortUserName());

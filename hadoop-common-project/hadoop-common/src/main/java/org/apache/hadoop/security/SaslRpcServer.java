@@ -191,7 +191,7 @@ public class SaslRpcServer {
   public static void init(Configuration conf) {
     Security.addProvider(new SaslPlainServer.SecurityProvider());
     Security.addProvider(new SaslTokenAuthServer.SecurityProvider());
-	// passing null so factory is populated with all possibilities.  the
+    // passing null so factory is populated with all possibilities.  the
     // properties passed when instantiating a server are what really matter
     saslFactory = new FastSaslServerFactory(null);
   }

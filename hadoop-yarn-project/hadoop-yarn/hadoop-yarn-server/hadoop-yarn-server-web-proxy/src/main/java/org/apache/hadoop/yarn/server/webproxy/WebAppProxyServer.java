@@ -81,7 +81,7 @@ public class WebAppProxyServer extends CompositeService {
           YarnConfiguration.PROXY_PRINCIPAL);
     }
   }
-  
+
   /**
    * Retrieve PROXY bind address from configuration
    *

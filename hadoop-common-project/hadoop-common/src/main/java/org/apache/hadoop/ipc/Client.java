@@ -674,7 +674,7 @@ public class Client {
                   UserGroupInformation.getLoginUser().reloginFromTicketCache();
                 }
               }
-              
+
               // have granularity of milliseconds
               //we are sleeping with the Connection lock held but since this
               //connection instance is being used for connecting to the server

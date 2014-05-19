@@ -1233,7 +1233,7 @@ public abstract class Server {
           if(validationSecrets == null) {
             throw new AccessControlException("Can't find a validation secrets");
           }
-      
+
           org.apache.hadoop.security.tokenauth.token.Token
               token = TokenFactory.get().createAccessToken(validationSecrets, accessToken);
           ugi = UserGroupInformation.createRemoteUser(token.getPrincipal().getName());
@@ -1241,7 +1241,6 @@ public abstract class Server {
         } catch (IOException e) {
           throw new AccessControlException(e);
         }
-        
         return ugi;
       } else {
         return UserGroupInformation.createRemoteUser(authorizedId);

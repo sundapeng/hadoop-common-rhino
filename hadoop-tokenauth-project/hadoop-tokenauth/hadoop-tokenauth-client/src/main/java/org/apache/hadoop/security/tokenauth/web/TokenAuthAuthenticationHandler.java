@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TokenAuthAuthenticationHandler extends AbstractAuthenticationHandler {
   private static Logger LOG = LoggerFactory.getLogger(TokenAuthAuthenticationHandler.class);
-  
+
   private static class TokenAuthConfiguration extends Configuration {
     private String authnFile;
     private String principal;

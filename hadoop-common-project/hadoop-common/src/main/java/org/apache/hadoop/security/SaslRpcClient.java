@@ -232,7 +232,7 @@ public class SaslRpcClient {
         break;
       }
       case TOKENAUTH : {
-        if (ugi.getRealAuthenticationMethod().getAuthMethod() != 
+        if (ugi.getRealAuthenticationMethod().getAuthMethod() !=
             AuthMethod.TOKENAUTH) {
           return null; // client isn't using tokenauth
         }

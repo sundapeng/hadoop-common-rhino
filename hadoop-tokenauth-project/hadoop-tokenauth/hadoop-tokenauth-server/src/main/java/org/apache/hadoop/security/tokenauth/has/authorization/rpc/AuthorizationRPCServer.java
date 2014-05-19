@@ -44,31 +44,34 @@ public class AuthorizationRPCServer implements AuthorizationServiceProtocol {
   private Configuration config;
   private RPC.Server server;
 
-  public AuthorizationRPCServer(Configuration conf, AuthorizationService 
-      authzService, PolicyProvider policy) throws IOException {
+  public AuthorizationRPCServer(Configuration conf, AuthorizationService authzService,
+      PolicyProvider policy) throws IOException {
     this.config = new Configuration(conf);
     this.authzService = authzService;
-    /* Authorization RPC server is authentication root, use simple authentication*/
+    /* Authorization RPC server is authentication root, use simple authentication */
     config.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION, "simple");
     RPC.setProtocolEngine(config, AuthorizationServiceProtocolPB.class, ProtobufRpcEngine.class);
-    AuthorizationServiceProtocolServerSideTranslatorPB translator = 
-        new AuthorizationServiceProtocolServerSideTranslatorPB(this);
+    AuthorizationServiceProtocolServerSideTranslatorPB translator = new AuthorizationServiceProtocolServerSideTranslatorPB(
+        this);
 
-    BlockingService service = AuthorizationServiceProtocolProtos
-        .AuthorizationService.newReflectiveBlockingService(translator);
+    BlockingService service = AuthorizationServiceProtocolProtos.AuthorizationService
+        .newReflectiveBlockingService(translator);
 
     InetSocketAddress bindAddr = getAddress(config);
-    this.server = new RPC.Builder(config).setProtocol(
-        AuthorizationServiceProtocolPB.class).setInstance(service)
-        .setBindAddress(bindAddr.getHostName()).setPort(bindAddr.getPort())
-        .setNumHandlers(config.getInt(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHORIZATION_SERVER_LISTENER_THREAD_COUNT_KEY,
-            HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHORIZATION_SERVER_LISTENER_THREAD_COUNT_DEFAULT)).setVerbose(false).build();
+    this.server = new RPC.Builder(config)
+        .setProtocol(AuthorizationServiceProtocolPB.class)
+        .setInstance(service)
+        .setBindAddress(bindAddr.getHostName())
+        .setPort(bindAddr.getPort())
+        .setNumHandlers(config.getInt(
+            HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHORIZATION_SERVER_LISTENER_THREAD_COUNT_KEY,
+            HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHORIZATION_SERVER_LISTENER_THREAD_COUNT_DEFAULT))
+        .setVerbose(false).build();
 
     // set service-level authorization security policy
     if (config.getBoolean(CommonConfigurationKeys.HADOOP_SECURITY_AUTHORIZATION, false)) {
       server.refreshServiceAcl(config, policy);
     }
-
   }
 
   public void start() {
@@ -78,28 +81,28 @@ public class AuthorizationRPCServer implements AuthorizationServiceProtocol {
   public InetSocketAddress getAddress() {
     return server.getListenerAddress();
   }
-  
+
   public void join() throws InterruptedException {
     server.join();
   }
-  
+
   public void stop() {
     server.stop();
   }
-  
+
   public boolean isAlive() {
     return server != null;
   }
-  
+
   @Override
-  public byte[] getAccessToken(byte[] identityToken, String protocol) throws
-      IOException {
+  public byte[] getAccessToken(byte[] identityToken, String protocol) throws IOException {
     String remoteAddr = Server.getRemoteAddress();
     return authzService.getAccessToken(identityToken, protocol, remoteAddr);
   }
-  
+
   private static InetSocketAddress getAddress(Configuration conf) {
-    String addr = conf.get(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_RPC_ADDRESS_KEY, 
+    String addr = conf.get(
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_RPC_ADDRESS_KEY,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_RPC_ADDRESS_DEFAULT);
     return NetUtils.createSocketAddr(addr,
         CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_RPC_PORT_DEFAULT,

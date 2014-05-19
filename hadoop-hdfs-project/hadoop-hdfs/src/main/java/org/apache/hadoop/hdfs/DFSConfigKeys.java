@@ -488,10 +488,10 @@ public class DFSConfigKeys extends CommonConfigurationKeys {
   public static final String  DFS_NAMENODE_STARTUP_KEY = "dfs.namenode.startup";
   public static final String  DFS_DATANODE_KEYTAB_FILE_KEY = "dfs.datanode.keytab.file";
   public static final String  DFS_DATANODE_KERBEROS_PRINCIPAL_KEY = "dfs.datanode.kerberos.principal";
-  //datanode tokenauth
-  public static final String  DFS_DATANODE_AUTHENTICATION_FILE_KEY="dfs.datanode.authentication.file";
-  public static final String  DFS_DATANODE_TOKENAUTH_USER_NAME_KEY="dfs.datanode.tokenauth.principal";
-  
+  // datanode tokenauth
+  public static final String DFS_DATANODE_AUTHENTICATION_FILE_KEY = "dfs.datanode.authentication.file";
+  public static final String DFS_DATANODE_TOKENAUTH_USER_NAME_KEY = "dfs.datanode.tokenauth.principal";
+
   public static final String  DFS_DATANODE_SHARED_FILE_DESCRIPTOR_PATHS = "dfs.datanode.shared.file.descriptor.paths";
   public static final String  DFS_DATANODE_SHARED_FILE_DESCRIPTOR_PATHS_DEFAULT = "/dev/shm,/tmp";
   public static final String  DFS_SHORT_CIRCUIT_SHARED_MEMORY_WATCHER_INTERRUPT_CHECK_MS = "dfs.short.circuit.shared.memory.watcher.interrupt.check.ms";
@@ -499,7 +499,7 @@ public class DFSConfigKeys extends CommonConfigurationKeys {
   public static final String  DFS_NAMENODE_KEYTAB_FILE_KEY = "dfs.namenode.keytab.file";
   public static final String  DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY = "dfs.namenode.kerberos.principal";
   public static final String  DFS_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY = "dfs.namenode.kerberos.internal.spnego.principal";
-  //namenode tokenauth
+  // namenode tokenauth
   public static final String  DFS_NAMENODE_AUTHENTICATION_FILE_KEY = "dfs.namenode.authentication.file";
   public static final String  DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY = "dfs.namenode.tokenauth.principal";
   public static final String  DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_USER_NAME_KEY = "dfs.namenode.tokenauth.internal.web.principal";

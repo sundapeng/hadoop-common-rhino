@@ -48,8 +48,6 @@ import org.apache.hadoop.security.token.TokenInfo;
 import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
-import org.apache.hadoop.security.tokenauth.web.TokenAuthAuthenticator;
-
 
 
 //this will need to be replaced someday when there is a suitable replacement
@@ -132,7 +130,7 @@ public class SecurityUtil {
     return new HASClientImpl(getHttpServerUrl(serverSecure, identityServer), getHttpServerUrl(
         serverSecure, authorizationServer));
   }
-  
+
   static String getHttpServerUrl(boolean isSecure, String httpServer) {
     return (isSecure ? "https://" : "http://") + httpServer;
   }
@@ -232,7 +230,7 @@ public class SecurityUtil {
       final String keytabFileKey, final String userNameKey) throws IOException {
     login(conf, keytabFileKey, userNameKey, getLocalHostName());
   }
-  
+
   @InterfaceAudience.Public
   @InterfaceStability.Evolving
   public static void tokenAuthLogin(final Configuration conf,
@@ -275,7 +273,7 @@ public class SecurityUtil {
         hostname);
     UserGroupInformation.loginUserFromKeytab(principalName, keytabFilename);
   }
-  
+
   @InterfaceAudience.Public
   @InterfaceStability.Evolving
   public static void tokenAuthLogin(final Configuration conf,
@@ -364,7 +362,7 @@ public class SecurityUtil {
     }
     return null;
   }
-  
+
   public static TokenAuthInfo
   getTokenAuthInfo(Class<?> protocol, Configuration conf) {
     synchronized (testProviders) {
@@ -385,7 +383,7 @@ public class SecurityUtil {
     }
     return null;
   }
- 
+
   /**
    * Look up the TokenInfo for a given protocol. It searches all known
    * SecurityInfo providers.

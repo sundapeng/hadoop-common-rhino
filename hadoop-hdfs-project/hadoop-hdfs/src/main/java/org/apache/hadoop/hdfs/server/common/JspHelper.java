@@ -150,7 +150,7 @@ public class JspHelper {
         // This is not necessarily true, could have been auth'ed by user-facing
         // filter
         ugi.setAuthenticationMethod(secureAuthMethod);
-        
+
         if (UserGroupInformation.isTokenAuthEnabled()) {
           if (ugi.getToken() == null) {
             String tokenStr = WebHelper.getAccessTokenFromCookie(request);
