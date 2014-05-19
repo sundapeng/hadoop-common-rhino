@@ -130,21 +130,27 @@ public class HASClientImpl extends HASClient {
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     conn.setDoOutput(true);
     conn.setRequestMethod(requestMethod);
-    conn.setRequestProperty("Content-Type", contentType);
     conn.setRequestProperty("Accept", acceptType);
     conn.setRequestProperty("charset", "utf-8");
-    conn.setRequestProperty("Content-Length",
-        "" + String.valueOf(content.getBytes().length));
 
-    return sendRequest(conn, content.getBytes());
+    if (content != null) {
+      conn.setRequestProperty("Content-Type", contentType);
+      conn.setRequestProperty("Content-Length",
+          "" + String.valueOf(content.getBytes().length));
+    }
+
+    return content != null ? sendRequest(conn, content.getBytes()) :
+      sendRequest(conn, null);
   }
 
   private String sendRequest(HttpURLConnection conn, byte[] content) throws
       IOException {
-    OutputStream out = conn.getOutputStream();
-    out.write(content);
-    out.flush();
-    out.close();
+    if (content != null) {
+      OutputStream out = conn.getOutputStream();
+      out.write(content);
+      out.flush();
+      out.close();
+    }
     InputStream in = conn.getInputStream();
 
     int httpStatus = conn.getResponseCode();
