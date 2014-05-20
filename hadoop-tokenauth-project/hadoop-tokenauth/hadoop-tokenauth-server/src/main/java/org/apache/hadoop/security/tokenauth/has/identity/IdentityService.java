@@ -191,13 +191,19 @@ public class IdentityService {
     return tokenInfo;
   }
 
-  private void validateToken(Token token) throws IOException {
+  public void validateToken(Token token) throws IOException {
     if (TokenUtils.isExpired(token)) {
       throw new IOException("This token is expired.");
     }
     if (getTokenInfo((IdentityToken) token).isRevoked()) {
       throw new IOException("This token has been revoked.");
     }
+  }
+
+  public void validateToken(byte[] tokenBytes) throws IOException {
+    IdentityToken identityToken = (IdentityToken) tokenFactory.createIdentityToken(
+        getValidationSecrets(), tokenBytes);
+    validateToken(identityToken);
   }
 
   /**

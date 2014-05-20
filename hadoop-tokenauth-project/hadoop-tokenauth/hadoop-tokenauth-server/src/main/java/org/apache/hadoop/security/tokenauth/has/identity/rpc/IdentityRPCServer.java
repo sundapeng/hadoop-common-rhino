@@ -134,4 +134,14 @@ public class IdentityRPCServer implements IdentityServiceProtocals {
   public void cancelToken(byte[] identityToken, long tokenId) throws IOException {
     identityService.cancelToken(identityToken, tokenId);
   }
+
+  @Override
+  public boolean validateToken(byte[] identityToken) throws IOException {
+    try{
+      identityService.validateToken(identityToken);
+    } catch(IOException e){
+      return false;
+    }
+    return true;
+  }
 }

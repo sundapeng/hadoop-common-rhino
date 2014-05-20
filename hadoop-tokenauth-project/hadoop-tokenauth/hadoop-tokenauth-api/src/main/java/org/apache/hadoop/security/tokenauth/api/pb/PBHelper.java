@@ -23,6 +23,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.callback.Callback;
@@ -38,9 +39,11 @@ import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.kerberos.KerberosCallback;
 import org.apache.hadoop.security.tokenauth.proto.AuthorizationServiceProtocolProtos;
 import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos;
+import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos.ValidateTokenResponseProto;
 import org.apache.hadoop.security.tokenauth.proto.TokenAuthProtos;
 
 import com.google.protobuf.ByteString;
+
 import sun.security.provider.DSAPrivateKey;
 import sun.security.provider.DSAPublicKeyImpl;
 
@@ -378,6 +381,11 @@ public class PBHelper {
     return proto.getIdentityToken().toByteArray();
   }
 
+  public static boolean convert(
+      IdentityServiceProtocolProtos.ValidateTokenResponseProto proto) {
+    return proto.getIsValid();
+  }
+
   public static IdentityResponse convert(
       IdentityServiceProtocolProtos.ResponseProto proto) throws
       InvalidKeyException {
@@ -424,6 +432,14 @@ public class PBHelper {
     if(identityToken != null) {
       builder.setIdentityToken(ByteString.copyFrom(identityToken));
     }
+    return builder.build();
+  }
+  
+  public static IdentityServiceProtocolProtos.ValidateTokenResponseProto convert(
+      boolean isValid){
+    IdentityServiceProtocolProtos.ValidateTokenResponseProto.Builder builder =
+        IdentityServiceProtocolProtos.ValidateTokenResponseProto.newBuilder();
+    builder.setIsValid(isValid);
     return builder.build();
   }
 

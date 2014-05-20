@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.tokenauth.api.IdentityServiceProtocol;
 import org.apache.hadoop.security.tokenauth.authorize.policy.EvaluationContext;
 import org.apache.hadoop.security.tokenauth.authorize.policy.PolicyEngine;
 import org.apache.hadoop.security.tokenauth.authorize.policy.PolicyEngineFactory;
@@ -41,6 +42,7 @@ import org.apache.hadoop.security.tokenauth.has.authorization.http.Authorization
 import org.apache.hadoop.security.tokenauth.has.authorization.rpc.AuthorizationRPCServer;
 import org.apache.hadoop.security.tokenauth.has.protocol.SecretsProtocol;
 import org.apache.hadoop.security.tokenauth.has.protocolPB.SecretsProtocolClientSideTranslatorPB;
+import org.apache.hadoop.security.tokenauth.rpc.pb.IdentityServiceProtocolClientSideTranslatorPB;
 import org.apache.hadoop.security.tokenauth.secrets.Secrets;
 import org.apache.hadoop.security.tokenauth.token.Token;
 import org.apache.hadoop.security.tokenauth.token.TokenFactory;
@@ -52,6 +54,7 @@ import org.apache.hadoop.util.Time;
 public class AuthorizationService {
   private Configuration conf;
   private SecretsProtocol secretsProtocol;
+  private IdentityServiceProtocol identityServiceProtocal;
   protected AuthorizationHttpServer httpServer;
   protected AuthorizationRPCServer rpcServer;
   private final TokenFactory tokenFactory;
@@ -91,36 +94,45 @@ public class AuthorizationService {
   }
   
   private void ensureConnectIdentityServer() throws IOException {
-    if(secretsProtocol == null) {
-      synchronized(this) {
-        if(secretsProtocol == null) {
+    if(secretsProtocol == null || identityServiceProtocal == null) {
+      synchronized (this) {
+        if (secretsProtocol == null || identityServiceProtocal == null) {
           SocketFactory factory = NetUtils.getDefaultSocketFactory(conf);
           InetSocketAddress address = NetUtils.createSocketAddr(
               conf.get(CommonConfigurationKeys.HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_KEY), 0,
               CommonConfigurationKeys.HADOOP_SECURITY_IDENTITY_SERVER_RPC_ADDRESS_KEY);
-          conf.setBoolean(CommonConfigurationKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH_ALLOWED_KEY, true);
-          secretsProtocol = new SecretsProtocolClientSideTranslatorPB(conf, address, factory, 15000);
+          conf.setBoolean(CommonConfigurationKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH_ALLOWED_KEY,
+              true);
+          if (secretsProtocol == null) {
+            secretsProtocol = new SecretsProtocolClientSideTranslatorPB(conf, address, factory,
+                15000);
+          }
+          if (identityServiceProtocal == null) {
+            identityServiceProtocal = new IdentityServiceProtocolClientSideTranslatorPB(conf,
+                address, factory, 15000);
+          }
         }
       }
     }
   }
-  
+
   /**
    * Client should get the access token after the cached access token is expired,
    * otherwise the load of identity server and access server is to large 
    */
   public byte[] getAccessToken(byte[] tokenBytes, String protocol, String remoteAddr) throws IOException {
+    ensureConnectIdentityServer();
+    if(!identityServiceProtocal.validateToken(tokenBytes)){
+      throw new IOException("Invalid identity token. Please make sure this token is not expired or revoked.");
+    }
+    
     /*user identity token*/
     Token identityToken = tokenFactory.createIdentityToken(getValidationSecrets(), tokenBytes); 
-    if (TokenUtils.isExpired(identityToken)) {
-      throw new IOException("Identity token for user " + identityToken.getPrincipal().getName() + " is expired.");
-    }
     
     if (!doAuthorization(identityToken, protocol, remoteAddr)) {
       throw new IOException("Client doesn't have previlege to access requested service: " + protocol);
     }
     
-    ensureConnectIdentityServer();
     if (Time.now() >= TokenUtils.getRefreshTime(getLoginToken())) {
       loginAsAuthzUser();
     }

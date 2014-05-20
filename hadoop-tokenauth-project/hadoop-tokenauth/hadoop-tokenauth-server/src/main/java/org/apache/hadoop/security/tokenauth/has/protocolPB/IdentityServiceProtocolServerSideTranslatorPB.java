@@ -19,6 +19,7 @@
 package org.apache.hadoop.security.tokenauth.has.protocolPB;
 
 import java.io.IOException;
+
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.apache.hadoop.ipc.ProtocolSignature;
@@ -26,6 +27,8 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.has.protocol.IdentityServiceProtocals;
+import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos.ValidateTokenRequestProto;
+import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos.ValidateTokenResponseProto;
 import org.apache.hadoop.security.tokenauth.proto.SecretsProtocolProtos;
 import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos;
 import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos.CancelTokenRequestProto;
@@ -81,6 +84,17 @@ public class IdentityServiceProtocolServerSideTranslatorPB
       server.cancelToken(request.getIdentityToken().toByteArray(), request.getTokenId());
       return VoidResponseProto.getDefaultInstance();
     } catch (IOException e) {
+      throw new ServiceException(e);
+    }
+  }
+  
+  @Override
+  public ValidateTokenResponseProto validateToken(RpcController controller,
+      ValidateTokenRequestProto request) throws ServiceException {
+    try{
+      boolean result = server.validateToken(request.getIdentityToken().toByteArray());
+      return PBHelper.convert(result);
+    } catch (IOException e){
       throw new ServiceException(e);
     }
   }

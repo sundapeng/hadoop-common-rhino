@@ -52,4 +52,13 @@ public interface IdentityServiceProtocol {
    */
   @Public
   void cancelToken(byte[] identityToken, long tokenId) throws IOException;
+  
+  /**
+   * Validate an identity token.
+   * @param identityToken the identity token to be validated
+   * @return true if it is valid, otherwise, false.
+   * @throws IOException
+   */
+  @Public
+  boolean validateToken(byte[] identityToken) throws IOException;
 }

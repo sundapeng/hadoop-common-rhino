@@ -107,6 +107,14 @@ message CancelTokenRequestProto {
   optional uint64 tokenId = 3;
 }
 
+message ValidateTokenRequestProto{
+  optional bytes identityToken = 1;
+}
+
+message ValidateTokenResponseProto{
+  optional bool isValid = 1;
+}
+
 message VoidResponseProto {
 }
 
@@ -117,5 +125,7 @@ service IdentityService {
   rpc renewToken(RenewTokenRequestProto) returns(RenewTokenResponseProto);
   
   rpc cancelToken(CancelTokenRequestProto) returns(VoidResponseProto);
+  
+  rpc validateToken(ValidateTokenRequestProto) returns(ValidateTokenResponseProto);
 }
 

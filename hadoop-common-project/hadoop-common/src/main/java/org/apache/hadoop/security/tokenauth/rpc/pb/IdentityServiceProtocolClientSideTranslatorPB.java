@@ -22,6 +22,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.InvalidKeyException;
+
 import javax.net.SocketFactory;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
@@ -38,6 +39,7 @@ import org.apache.hadoop.security.tokenauth.api.pb.PBHelper;
 import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos;
 import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos.CancelTokenRequestProto;
 import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos.RenewTokenRequestProto;
+import org.apache.hadoop.security.tokenauth.proto.IdentityServiceProtocolProtos.ValidateTokenRequestProto;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.RpcController;
@@ -104,6 +106,17 @@ public class IdentityServiceProtocolClientSideTranslatorPB
           setIdentityToken(ByteString.copyFrom(identityToken))
           .setTokenId(tokenId).build();
       rpcProxy.cancelToken(NULL_CONTROLLER, proto);
+    } catch (ServiceException e) {
+      throw ProtobufHelper.getRemoteException(e);
+    }
+  }
+  
+  @Override
+  public boolean validateToken(byte[] identityToken) throws IOException {
+    try {
+      ValidateTokenRequestProto proto = ValidateTokenRequestProto.newBuilder()
+          .setIdentityToken(ByteString.copyFrom(identityToken)).build();
+      return PBHelper.convert(rpcProxy.validateToken(NULL_CONTROLLER, proto));
     } catch (ServiceException e) {
       throw ProtobufHelper.getRemoteException(e);
     }
