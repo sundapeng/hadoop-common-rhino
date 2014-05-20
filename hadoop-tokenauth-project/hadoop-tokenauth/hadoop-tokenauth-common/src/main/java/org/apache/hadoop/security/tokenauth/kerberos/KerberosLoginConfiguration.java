@@ -37,8 +37,8 @@ public class KerberosLoginConfiguration
     this.principal = principal;
   }
 
-  private final String USER_KERBEROS_CONFIG_NAME = "user-kerberos";
-  private final String KEYTAB_KERBEROS_CONFIG_NAME = "keytab-kerberos";
+  private final static String USER_KERBEROS_CONFIG_NAME = "user-kerberos";
+  private final static String KEYTAB_KERBEROS_CONFIG_NAME = "keytab-kerberos";
 
   private static final Map<String, String> BASIC_JAAS_OPTIONS =
       new HashMap<String, String>();

@@ -64,8 +64,10 @@ public class MiniHas {
   private static final String AUTHO_POLICY_SCRIPT_FILE = "function evaluate(){return true;}";
   private static final String PRINCIPAL = "root";
   private static final String AUTHN_FILE = MINI_TOKENAUTH_BASEDIR + "/root.sso";
-  private static final String IDENTITY_TOKEN_PERSISTENT_ON_EXIT = "hadoop.security.tokenauth.identity.server.issuedtokens.persistent.on.exit";
-  private static final String IDENTITY_TOKEN_PERSISTENT_FILE_KEY = "hadoop.security.tokenauth.identity.server.issuedtokens.persistent.file";
+  private static final String IDENTITY_TOKEN_PERSISTENT_ON_EXIT = 
+      "hadoop.security.tokenauth.identity.server.issuedtokens.persistent.on.exit";
+  private static final String IDENTITY_TOKEN_PERSISTENT_FILE_KEY = 
+      "hadoop.security.tokenauth.identity.server.issuedtokens.persistent.file";
   private static final String IDENTITYTOKEN_PERSISTENT_FILE = MINI_TOKENAUTH_BASEDIR
       + "/identity-token-persistent";
   private static final String HADOOP_SECURITY_AUTHENTICATION = "hadoop.security.authentication";
@@ -129,7 +131,7 @@ public class MiniHas {
     /**
      * Default: simple
      */
-    public Builder SetAuthenticatorsKeys(String val) {
+    public Builder setAuthenticatorsKeys(String val) {
       propMap.put(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHENTICATORS_KEY, val);
       return this;
     }
@@ -286,13 +288,26 @@ public class MiniHas {
   }
 
   private synchronized void initMiniHas() throws Exception {
+    if (is != null || as != null) {
+      throw new RuntimeException("Mini Has already started.");
+    }
+    
     // 1. start identity service
     MiniIdentityThread it = new MiniIdentityThread();
     MiniAuthThread at = new MiniAuthThread();
     Thread t1 = new Thread(it);
     t1.start();
 
-    // 2. wait for indentity service started
+    // 2. initial directory
+    initDirectory();
+
+    // 3. start authorization service
+    Thread t2 = new Thread(at);
+    t2.start();
+  }
+  
+  private void initDirectory() throws IOException {
+    // 1. wait for indentity service started
     int i = 0;
     while (!isIdentityServiceUp()) {
       try {
@@ -308,17 +323,13 @@ public class MiniHas {
     }
 
     if (!isIdentityServiceUp()) {
-      return;
+      throw new IOException("Identity service start failed.");
     }
 
     LOG.info("Identity Service started.");
-
-    // 3. build temp dir and files
+    
+    // 2. build temp dir and files
     buildTmpFiles();
-
-    // 4. start authorization service
-    Thread t2 = new Thread(at);
-    t2.start();
   }
 
   private void buildTmpFiles() throws IOException {
