@@ -50,6 +50,7 @@ import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 import org.apache.hadoop.security.tokenauth.token.impl.AccessToken;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Time;
+import org.mortbay.log.Log;
 
 public class AuthorizationService {
   private Configuration conf;
@@ -123,6 +124,7 @@ public class AuthorizationService {
   public byte[] getAccessToken(byte[] tokenBytes, String protocol, String remoteAddr) throws IOException {
     ensureConnectIdentityServer();
     if(!identityServiceProtocal.validateToken(tokenBytes)){
+      Log.info("Identity server reported it is an invalid identity token.");
       throw new IOException("Invalid identity token. Please make sure this token is not expired or revoked.");
     }
     
@@ -142,6 +144,7 @@ public class AuthorizationService {
     }
     
     Token accessToken = generateAccessToken(identityToken, secrets);
+    Log.info("Issued an access token for "+identityToken.getPrincipal().getName());
     return TokenUtils.getBytesOfToken(accessToken);
   }
   
