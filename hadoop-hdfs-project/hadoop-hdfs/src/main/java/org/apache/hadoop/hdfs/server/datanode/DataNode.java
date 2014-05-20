@@ -1732,7 +1732,7 @@ public class DataNode extends Configured
     UserGroupInformation.setConfiguration(conf);
     if (UserGroupInformation.isTokenAuthEnabled()) {
       SecurityUtil.tokenAuthLogin(conf, DFS_DATANODE_AUTHENTICATION_FILE_KEY, 
-          DFS_DATANODE_TOKENAUTH_USER_NAME_KEY);
+          DFS_DATANODE_TOKENAUTH_PRINCIPAL_KEY);
     } else {
       SecurityUtil.login(conf, DFS_DATANODE_KEYTAB_FILE_KEY,
         DFS_DATANODE_KERBEROS_PRINCIPAL_KEY);

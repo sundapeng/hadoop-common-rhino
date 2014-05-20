@@ -1015,7 +1015,7 @@ public class DFSAdmin extends FsShell {
     // should be NN's one.
     if (UserGroupInformation.isTokenAuthEnabled()) {
       conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
-          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, ""));
+          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY, ""));
     } else {
       conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
         conf.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, ""));
@@ -1046,7 +1046,7 @@ public class DFSAdmin extends FsShell {
     // should be NN's one.
     if (UserGroupInformation.isTokenAuthEnabled()) {
       conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
-          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, ""));
+          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY, ""));
     } else {
       conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
         conf.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, ""));
@@ -1078,7 +1078,7 @@ public class DFSAdmin extends FsShell {
     // should be NAMENODE's one.
     if (UserGroupInformation.isTokenAuthEnabled()) {
       conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
-          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, ""));
+          conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY, ""));
     } else {
       conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY, 
         conf.get(DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, ""));
@@ -1470,7 +1470,7 @@ public class DFSAdmin extends FsShell {
     // For datanode proxy the server principal should be DN's one.
     if (UserGroupInformation.isTokenAuthEnabled()) {
       conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY,
-          conf.get(DFSConfigKeys.DFS_DATANODE_TOKENAUTH_USER_NAME_KEY, ""));
+          conf.get(DFSConfigKeys.DFS_DATANODE_TOKENAUTH_PRINCIPAL_KEY, ""));
     } else {
       conf.set(CommonConfigurationKeys.HADOOP_SECURITY_SERVICE_USER_NAME_KEY,
         conf.get(DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY, ""));

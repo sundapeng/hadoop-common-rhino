@@ -37,7 +37,7 @@ import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY)
 @TokenAuthInfo(
-    serverPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY)
+    serverPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY)
 @InterfaceAudience.Private
 public interface NamenodeProtocol {
   /**

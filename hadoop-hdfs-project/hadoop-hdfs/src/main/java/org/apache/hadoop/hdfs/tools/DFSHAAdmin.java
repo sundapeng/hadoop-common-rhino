@@ -71,7 +71,7 @@ public class DFSHAAdmin extends HAAdmin {
     conf = new HdfsConfiguration(conf);
     String nameNodePrincipal;
     if (UserGroupInformation.isTokenAuthEnabled()) {
-      nameNodePrincipal = conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY, "");
+      nameNodePrincipal = conf.get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY, "");
     } else {
       nameNodePrincipal = conf.get(
         DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, "");

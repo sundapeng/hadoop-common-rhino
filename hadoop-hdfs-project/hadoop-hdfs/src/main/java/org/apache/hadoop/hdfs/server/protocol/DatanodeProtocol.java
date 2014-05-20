@@ -43,8 +43,8 @@ import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
     serverPrincipal = DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, 
     clientPrincipal = DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY)
 @TokenAuthInfo(
-    serverPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY,
-    clientPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_USER_NAME_KEY)
+    serverPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY,
+    clientPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_PRINCIPAL_KEY)
 @InterfaceAudience.Private
 public interface DatanodeProtocol {
   /**

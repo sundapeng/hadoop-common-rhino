@@ -490,7 +490,7 @@ public class DFSConfigKeys extends CommonConfigurationKeys {
   public static final String  DFS_DATANODE_KERBEROS_PRINCIPAL_KEY = "dfs.datanode.kerberos.principal";
   // datanode tokenauth
   public static final String DFS_DATANODE_AUTHENTICATION_FILE_KEY = "dfs.datanode.authentication.file";
-  public static final String DFS_DATANODE_TOKENAUTH_USER_NAME_KEY = "dfs.datanode.tokenauth.principal";
+  public static final String DFS_DATANODE_TOKENAUTH_PRINCIPAL_KEY = "dfs.datanode.tokenauth.principal";
 
   public static final String  DFS_DATANODE_SHARED_FILE_DESCRIPTOR_PATHS = "dfs.datanode.shared.file.descriptor.paths";
   public static final String  DFS_DATANODE_SHARED_FILE_DESCRIPTOR_PATHS_DEFAULT = "/dev/shm,/tmp";
@@ -501,15 +501,15 @@ public class DFSConfigKeys extends CommonConfigurationKeys {
   public static final String  DFS_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY = "dfs.namenode.kerberos.internal.spnego.principal";
   // namenode tokenauth
   public static final String  DFS_NAMENODE_AUTHENTICATION_FILE_KEY = "dfs.namenode.authentication.file";
-  public static final String  DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY = "dfs.namenode.tokenauth.principal";
-  public static final String  DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_USER_NAME_KEY = "dfs.namenode.tokenauth.internal.web.principal";
+  public static final String  DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY = "dfs.namenode.tokenauth.principal";
+  public static final String  DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY = "dfs.namenode.tokenauth.internal.web.principal";
   public static final String  DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY = "dfs.secondary.namenode.keytab.file";
   public static final String  DFS_SECONDARY_NAMENODE_KERBEROS_PRINCIPAL_KEY = "dfs.secondary.namenode.kerberos.principal";
   public static final String  DFS_SECONDARY_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY = "dfs.secondary.namenode.kerberos.internal.spnego.principal";
   //secondary tokenauth
   public static final String  DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY = "dfs.secondary.namenode.authentication.file";
-  public static final String  DFS_SECONDARY_NAMENODE_TOKENAUTH_USER_NAME_KEY = "dfs.secondary.namenode.tokenauth.principal";
-  public static final String  DFS_SECONDARY_NAMENODE_INTERNAL_TOKENAUTH_WEB_USER_NAME_KEY = "dfs.secondary.namenode.tokenauth.internal,web.principal";
+  public static final String  DFS_SECONDARY_NAMENODE_TOKENAUTH_PRINCIPAL_KEY = "dfs.secondary.namenode.tokenauth.principal";
+  public static final String  DFS_SECONDARY_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY = "dfs.secondary.namenode.tokenauth.internal,web.principal";
   public static final String  DFS_NAMENODE_NAME_CACHE_THRESHOLD_KEY = "dfs.namenode.name.cache.threshold";
   public static final int     DFS_NAMENODE_NAME_CACHE_THRESHOLD_DEFAULT = 10;
   public static final String  DFS_NAMENODE_LEGACY_OIV_IMAGE_DIR_KEY = "dfs.namenode.legacy-oiv-image.dir";
@@ -582,7 +582,7 @@ public class DFSConfigKeys extends CommonConfigurationKeys {
   
   //journal node tokenauth
   public static final String DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY = "dfs.journalnode.authentication.file";
-  public static final String DFS_JOURNALNODE_TOKENAUTH_USER_NAME_KEY = "dfs.journalnode.tokenauth.principal";
+  public static final String DFS_JOURNALNODE_TOKENAUTH_PRINCIPAL_KEY = "dfs.journalnode.tokenauth.principal";
   public static final String DFS_JOURNALNODE_TOKENAUTH_INTERNAL_WEB_PRINCIPAL = "dfs.journalnode.tokenauth.internal.web.principal";
 
   // Journal-node related configs for the client side.

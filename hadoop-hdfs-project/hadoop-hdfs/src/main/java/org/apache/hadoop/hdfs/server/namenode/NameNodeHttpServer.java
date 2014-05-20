@@ -124,7 +124,7 @@ public class NameNodeHttpServer {
         DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY);
     builder.setTokenAuthUsernameConfKey(
             DFSUtil.getTokenAuthWebPrincipalKey(conf,
-                DFSConfigKeys.DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_USER_NAME_KEY))
+                DFSConfigKeys.DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY))
         .setIdentityServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)
         .setAuthorizationServerAddressKey(
             DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY)

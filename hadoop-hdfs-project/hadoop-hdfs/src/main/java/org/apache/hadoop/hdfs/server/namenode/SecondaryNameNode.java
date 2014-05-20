@@ -18,7 +18,7 @@
 package org.apache.hadoop.hdfs.server.namenode;
 
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY;
-import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_SECONDARY_NAMENODE_TOKENAUTH_USER_NAME_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_SECONDARY_NAMENODE_TOKENAUTH_PRINCIPAL_KEY;
 import static org.apache.hadoop.util.ExitUtil.terminate;
 
 import java.io.File;
@@ -219,7 +219,7 @@ public class SecondaryNameNode implements Runnable,
     if (UserGroupInformation.isSecurityEnabled()) {
       if(UserGroupInformation.isTokenAuthEnabled()){
         SecurityUtil.tokenAuthLogin(conf, DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY,
-            DFS_SECONDARY_NAMENODE_TOKENAUTH_USER_NAME_KEY, infoBindAddress);
+            DFS_SECONDARY_NAMENODE_TOKENAUTH_PRINCIPAL_KEY, infoBindAddress);
       } else {
         SecurityUtil.login(conf,
           DFSConfigKeys.DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY,
@@ -272,7 +272,7 @@ public class SecondaryNameNode implements Runnable,
         DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
         DFSConfigKeys.DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY);
     builder.setTokenAuthUsernameConfKey(DFSUtil.getTokenAuthWebPrincipalKey(conf,
-        DFSConfigKeys.DFS_SECONDARY_NAMENODE_INTERNAL_TOKENAUTH_WEB_USER_NAME_KEY))
+        DFSConfigKeys.DFS_SECONDARY_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY))
     .setAuthnFileConfKey(DFSUtil.getTokenAuthWebKeytabKey(conf,
         DFSConfigKeys.DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY))
     .setIdentityServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)

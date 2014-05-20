@@ -143,7 +143,7 @@ public class JournalNode implements Tool, Configurable, JournalNodeMXBean {
     InetSocketAddress socAddr = JournalNodeRpcServer.getAddress(conf);
     if (UserGroupInformation.isTokenAuthEnabled()) {
       SecurityUtil.tokenAuthLogin(conf, DFSConfigKeys.DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY, 
-          DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_USER_NAME_KEY, socAddr.getHostName());
+          DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_PRINCIPAL_KEY, socAddr.getHostName());
     } else {
       SecurityUtil.login(conf, DFSConfigKeys.DFS_JOURNALNODE_KEYTAB_FILE_KEY,
         DFSConfigKeys.DFS_JOURNALNODE_KERBEROS_PRINCIPAL_KEY, socAddr.getHostName());

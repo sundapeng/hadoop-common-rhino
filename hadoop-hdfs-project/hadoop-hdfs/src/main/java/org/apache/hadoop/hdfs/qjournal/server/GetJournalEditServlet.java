@@ -94,7 +94,7 @@ public class GetJournalEditServlet extends HttpServlet {
     if (UserGroupInformation.isTokenAuthEnabled()) {
       validRequestors.addAll(DFSUtil.getAllNnTokenAuthPrincipals(conf));
       validRequestors.add(SecurityUtil.getServerPrincipal(conf
-          .get(DFSConfigKeys.DFS_SECONDARY_NAMENODE_TOKENAUTH_USER_NAME_KEY),
+          .get(DFSConfigKeys.DFS_SECONDARY_NAMENODE_TOKENAUTH_PRINCIPAL_KEY),
           SecondaryNameNode.getHttpAddress(conf).getHostName()));
     } else {
       validRequestors.addAll(DFSUtil.getAllNnPrincipals(conf));

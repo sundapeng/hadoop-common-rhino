@@ -34,8 +34,8 @@ import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
     serverPrincipal = DFSConfigKeys.DFS_JOURNALNODE_KERBEROS_PRINCIPAL_KEY,
     clientPrincipal = DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY)
 @TokenAuthInfo(
-    serverPrincipal = DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_USER_NAME_KEY,
-    clientPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY)
+    serverPrincipal = DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_PRINCIPAL_KEY,
+    clientPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY)
 @ProtocolInfo(protocolName = 
     "org.apache.hadoop.hdfs.qjournal.protocol.QJournalProtocol",
     protocolVersion = 1)

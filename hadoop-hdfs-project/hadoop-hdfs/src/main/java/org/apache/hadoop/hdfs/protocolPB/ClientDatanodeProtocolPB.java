@@ -29,7 +29,7 @@ import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY)
 @TokenAuthInfo(
-    serverPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_USER_NAME_KEY)
+    serverPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_PRINCIPAL_KEY)
 @TokenInfo(BlockTokenSelector.class)
 @ProtocolInfo(protocolName = 
     "org.apache.hadoop.hdfs.protocol.ClientDatanodeProtocol",

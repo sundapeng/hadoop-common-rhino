@@ -47,8 +47,8 @@ import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
     serverPrincipal = DFSConfigKeys.DFS_JOURNALNODE_KERBEROS_PRINCIPAL_KEY,
     clientPrincipal = DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY)
 @TokenAuthInfo(
-    serverPrincipal = DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_USER_NAME_KEY,
-    clientPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_USER_NAME_KEY)
+    serverPrincipal = DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_PRINCIPAL_KEY,
+    clientPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY)
 @InterfaceAudience.Private
 public interface QJournalProtocol {
   public static final long versionID = 1L;
