@@ -62,7 +62,7 @@ public class MiniHas {
   private static final String AUTHO_POLICY_SCRIPT_FILE_NAME = MINI_TOKENAUTH_BASEDIR
       + "/authorization-policy-script";
   private static final String AUTHO_POLICY_SCRIPT_FILE = "function evaluate(){return true;}";
-  private static final String PRINCIPAL = "root";
+  private static final String USERNAME = System.getProperty("user.name");;
   private static final String AUTHN_FILE = MINI_TOKENAUTH_BASEDIR + "/root.sso";
   private static final String IDENTITY_TOKEN_PERSISTENT_ON_EXIT = 
       "hadoop.security.tokenauth.identity.server.issuedtokens.persistent.on.exit";
@@ -106,7 +106,7 @@ public class MiniHas {
           + HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHENTICATOR_CONTROLFLAG,
           HADOOP_SECURITY_TOKENAUTH_AUTHENTICATOR_CONTROLFLAG_DEFAULT);
       propMap.put(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHORIZATION_SERVER_PRINCIPAL_KEY,
-          PRINCIPAL);
+          USERNAME);
       propMap.put(
           HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHORIZATION_SERVER_AUTHENTICATION_FILE_KEY,
           AUTHN_FILE);
@@ -116,7 +116,8 @@ public class MiniHas {
           AUTHO_POLICY_SCRIPT_FILE_NAME);
       propMap.put(IDENTITY_TOKEN_PERSISTENT_FILE_KEY, IDENTITYTOKEN_PERSISTENT_FILE);
       propMap.put(IDENTITY_TOKEN_PERSISTENT_ON_EXIT, "false");
-      propMap.put(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, "root");
+      propMap.put(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, 
+          USERNAME);
 
       // hadoop-core configuration
       propMap.put(HADOOP_SECURITY_AUTHENTICATION, HADOOP_SECURITY_AUTHENTICATION_DEFAULT);
@@ -351,7 +352,7 @@ public class MiniHas {
     List<Callback> callbacks = new LinkedList<Callback>();
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(PRINCIPAL);
+        ((NameCallback) cb).setName(USERNAME);
         callbacks.add(cb);
       }
     }
@@ -361,9 +362,7 @@ public class MiniHas {
     readOnlyCallbacks.add(KerberosCallback.class);
 
     final Krb5ShellHandler handler = new Krb5UseKeytabHandler(null);
-    String username = PRINCIPAL;
-    String authnPath = AUTHN_FILE;
-    TokenSerializer.get().saveAuthnFile(callbacks, username, authnPath,
+    TokenSerializer.get().saveAuthnFile(callbacks, USERNAME, AUTHN_FILE,
         handler.getSavedOnlyCallback(), readOnlyCallbacks);
   }
 

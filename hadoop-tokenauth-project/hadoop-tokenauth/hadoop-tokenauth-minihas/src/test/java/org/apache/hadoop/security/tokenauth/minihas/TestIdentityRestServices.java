@@ -39,30 +39,11 @@ import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.json.simple.parser.ParseException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.commons.io.IOUtils;
 
-public class TestIdentityRestServices  {
-  private static MiniHas has;
-  
-  @BeforeClass
-  public static void setUp() throws Exception {
-    has = new MiniHas.Builder()
-              .setIdentityHttpAddr("localhost:8786")
-              .setAuthoHttpAddr("localhost:8787")
-              .build();
-    has.waitHasUp();
-  }
-  
-  @AfterClass
-  public static void tearDown() throws Exception {
-    if(has != null) {
-      has.shutdown();
-    }
-  }
+public class TestIdentityRestServices extends MiniHasTestCase {
   
   @Test
   public void testHello() throws Exception {
@@ -99,9 +80,10 @@ public class TestIdentityRestServices  {
     System.out.println(response.getSessionId());
     System.out.println(response.getResultCode());
 
+    
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(USERNAME);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -112,7 +94,7 @@ public class TestIdentityRestServices  {
     
     String tokenEncode =
         URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
-    String protocolEncode = URLEncoder.encode("root", "UTF-8");
+    String protocolEncode = URLEncoder.encode(USERNAME, "UTF-8");
     String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" 
         + RESTParams.PROTOCOL + "=" + protocolEncode;
     URL url = new URL("http://localhost:8786/ws/v1/getSecrets");
@@ -131,7 +113,7 @@ public class TestIdentityRestServices  {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -170,7 +152,7 @@ public class TestIdentityRestServices  {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());

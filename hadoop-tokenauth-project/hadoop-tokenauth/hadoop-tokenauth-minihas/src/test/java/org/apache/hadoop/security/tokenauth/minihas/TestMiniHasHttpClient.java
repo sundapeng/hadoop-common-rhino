@@ -22,47 +22,27 @@ import javax.security.auth.callback.NameCallback;
 
 import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
-import org.apache.hadoop.security.tokenauth.minihas.MiniHas;
 import org.apache.hadoop.security.tokenauth.token.Token;
 import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestMiniHasHttpClient {
-  private static MiniHas has;
-  
-  @BeforeClass
-  public static void setUp() throws Exception {
-    has = new MiniHas.Builder()
-              .setIdentityHttpAddr("localhost:8786")
-              .setAuthoHttpAddr("localhost:8787")
-              .build();
-    has.waitHasUp();
-  }
-  
-  @AfterClass
-  public static void tearDown() throws Exception {
-    if(has != null) {
-      has.shutdown();
-    }
-  }
+public class TestMiniHasHttpClient extends MiniHasTestCase {
   
   @Test
   public void testAuthn() throws Exception {
     HASClient client = new HASClientImpl("http://localhost:8786", null);
-    IdentityRequest request = new IdentityRequest(null,null);
+    IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
     System.out.println(response.getResultCode());
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(USERNAME);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -81,7 +61,7 @@ public class TestMiniHasHttpClient {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(USERNAME);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -92,7 +72,7 @@ public class TestMiniHasHttpClient {
     //System.out.println(TokenUtils.encodeToken(response.getIdentityToken()));
     byte[] identityTokenBytes = response.getIdentityToken();
     Token identityToken = new IdentityToken(identityTokenBytes);
-    byte[] ac = client.getAccessToken(identityToken, "root");
+    byte[] ac = client.getAccessToken(identityToken, USERNAME);
     System.out.println(ac.length);
   }
   
@@ -104,7 +84,7 @@ public class TestMiniHasHttpClient {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
       }
     }
     request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
@@ -131,7 +111,7 @@ public class TestMiniHasHttpClient {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
       }
     }
     request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());

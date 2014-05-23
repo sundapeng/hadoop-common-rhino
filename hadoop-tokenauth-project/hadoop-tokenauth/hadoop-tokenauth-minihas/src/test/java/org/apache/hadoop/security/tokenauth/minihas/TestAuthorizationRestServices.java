@@ -35,28 +35,9 @@ import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestAuthorizationRestServices  {
-  private static MiniHas has;
-  
-  @BeforeClass
-  public static void setUp() throws Exception {
-    has = new MiniHas.Builder()
-              .setIdentityHttpAddr("localhost:8786")
-              .setAuthoHttpAddr("localhost:8787")
-              .build();
-    has.waitHasUp();
-  }
-  
-  @AfterClass
-  public static void tearDown() throws Exception {
-    if(has != null) {
-      has.shutdown();
-    }
-  }
+public class TestAuthorizationRestServices extends MiniHasTestCase {
   
   @Test
   public void testHello() throws Exception {
@@ -102,7 +83,7 @@ public class TestAuthorizationRestServices  {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(USERNAME);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -117,7 +98,7 @@ public class TestAuthorizationRestServices  {
     try {
       String tokenEncode =
           URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
-      String protocolEncode = URLEncoder.encode("root", "UTF-8");
+      String protocolEncode = URLEncoder.encode(USERNAME, "UTF-8");
       String contentString =
           RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "=" + protocolEncode;
       byte[] content = contentString.getBytes("UTF-8");

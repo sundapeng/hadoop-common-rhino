@@ -25,38 +25,14 @@ import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASConfiguration;
 import org.apache.hadoop.security.tokenauth.rpc.HASRpcClient;
-import org.apache.hadoop.security.tokenauth.secrets.Secrets;
-import org.apache.hadoop.security.tokenauth.secrets.SecretsManager;
-import org.apache.hadoop.security.tokenauth.token.Attribute;
 import org.apache.hadoop.security.tokenauth.token.Token;
 import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
-import org.apache.hadoop.util.Time;
 import org.apache.hadoop.conf.Configuration;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestMiniHasRpcClient {
-private static MiniHas has;
-  
-  @BeforeClass
-  public static void setUp() throws Exception {
-    has = new MiniHas.Builder()
-              .setIdentityRpcAddr("localhost:8781")
-              .setAuthoRpcAddr("localhost:8782")
-              .setIdentityAdmin("root")
-              .build();
-    has.waitHasUp();
-  }
-  
-  @AfterClass
-  public static void tearDown() throws Exception {
-    if(has != null) {
-      has.shutdown();
-    }
-  }
+public class TestMiniHasRpcClient extends MiniHasTestCase {
   
   @Test
   public void tesIdentityToken() throws Exception {
@@ -71,7 +47,7 @@ private static MiniHas has;
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(USERNAME);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -95,7 +71,7 @@ private static MiniHas has;
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(USERNAME);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -106,7 +82,7 @@ private static MiniHas has;
     //System.out.println(TokenUtils.encodeToken(response.getIdentityToken()));
     byte[] identityTokenBytes = response.getIdentityToken();
     Token identityToken = new IdentityToken(identityTokenBytes);
-    byte[] ac = client.getAccessToken(identityToken, "root");
+    byte[] ac = client.getAccessToken(identityToken, USERNAME);
     System.out.println(ac.length);
   }
   
@@ -121,7 +97,7 @@ private static MiniHas has;
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
       }
     }
     request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
@@ -152,7 +128,7 @@ private static MiniHas has;
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName("root");
+        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
       }
     }
     request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
