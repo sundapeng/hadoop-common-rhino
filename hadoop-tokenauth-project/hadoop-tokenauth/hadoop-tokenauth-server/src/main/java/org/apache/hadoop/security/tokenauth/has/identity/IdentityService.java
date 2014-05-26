@@ -207,8 +207,8 @@ public class IdentityService {
   }
 
   /**
-   * If targetTokenId is 0, then operations will take effect on current token. Otherwise, check
-   * operator's permission.
+   * If targetTokenId is 0 or equals to current token ID, then operations will
+   * take effect on current token. Otherwise, check operator's permission.
    * 
    * @param identityToken
    *          operator's identity token
@@ -219,21 +219,24 @@ public class IdentityService {
    */
   private IdentityToken getTargetToken(IdentityToken identityToken, long targetTokenId)
       throws IOException {
-    // If the requester is an administrator
-    if (0 != targetTokenId && identityToken.getUser().equals(adminId)) {
+    // Target token is current token
+    if (0 == targetTokenId || identityToken.getId() == targetTokenId){
+      return identityToken;
+    }
+
+    // Requester is an administrator
+    if(identityToken.getUser().equals(adminId)) {
       IdentityTokenInfo ti = tokenStorage.get(targetTokenId);
       if (null != ti) {
-        identityToken = tokenStorage.get(targetTokenId).getToken();
+        return tokenStorage.get(targetTokenId).getToken();
       } else {
         throw new IOException("Invalid token ID. Please make sure the identity "
             + "server has issued a token with specified ID and this token is still invalid.");
       }
-    } else if (0 != targetTokenId && !identityToken.getUser().equals(adminId)) {
+    } else {
       throw new IOException(
           "Permission denied. Only identity server administrators can manage tokens.");
     }
-
-    return identityToken;
   }
 
   /**
@@ -304,8 +307,8 @@ public class IdentityService {
     long instant = Time.now();
     long fiveMins = 5 * 60 * 1000; // in milliseconds
     long expires = conf.getLong(
-        HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_EXPIRES_KEY, 24 * 60 * 60 * 1000); // in
-                                                                                                     // milliseconds
+        HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_EXPIRES_KEY,
+        24 * 60 * 60 * 1000); // in milliseconds
 
     String authzServerPrincipal = getAuthorizationServerPrincipal();
     Secrets secrets;
