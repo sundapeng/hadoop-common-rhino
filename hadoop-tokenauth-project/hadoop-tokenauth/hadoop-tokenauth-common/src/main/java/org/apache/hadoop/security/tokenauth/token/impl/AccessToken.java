@@ -49,6 +49,11 @@ public class AccessToken extends AbstractToken {
   public AccessToken(byte[] rawBytes, Secrets secrets) {
     super(rawBytes, secrets);
   }
+  
+  public AccessToken(long id, Secrets secrets, String issuer, String user, long issueInstant,
+      long notBefore, long notOnOrAfter, boolean encrypted) {
+    super(id, secrets, issuer, user, issueInstant, notBefore, notOnOrAfter, encrypted);
+  }
 
   @Override
   void writeHeaderFields(DataOutput out) throws IOException {

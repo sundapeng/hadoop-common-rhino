@@ -46,5 +46,7 @@ public abstract class TokenSerializer {
   
   public abstract List<Callback> getCallbacks(HASClient 
       hasClient, String principal, String authnFilePath) throws IOException;
-
+  
+  public abstract void cleanIdentityTokenFile();
+  
 }
