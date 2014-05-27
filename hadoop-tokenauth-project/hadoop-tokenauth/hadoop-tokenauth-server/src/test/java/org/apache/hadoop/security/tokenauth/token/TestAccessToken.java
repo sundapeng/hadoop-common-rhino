@@ -24,17 +24,42 @@ import org.apache.hadoop.security.tokenauth.secrets.Secrets;
 import org.apache.hadoop.security.tokenauth.secrets.SecretsManager;
 import org.apache.hadoop.security.tokenauth.token.impl.AccessToken;
 import org.apache.hadoop.security.tokenauth.token.impl.ValidationSecrets;
+import org.apache.hadoop.util.Time;
 import org.junit.Test;
 
-public class TestAccessToken extends TokenTestCase {
+public class TestAccessToken {
   
   @Test
   public void testToken() throws Exception {
     
     Secrets secrets = SecretsManager.get().getSecrets("test");
-    Token accessToken = createToken(secrets, AccessToken.class.getName());
+    long instant = Time.now();
+    long fiveMins = 5 * 60 * 1000; // in milliseconds
+    long oneDay = 24 * 60 * 60 * 1000; // in milliseconds
+
+    Token accessToken = new AccessToken(
+        secrets, "www.apache.org", "test", instant, 
+        instant - fiveMins, instant + oneDay, false);
+    Attribute groups = new Attribute("groups");
+    groups.getValues().add("root");
+    groups.getValues().add("guest");
+    groups.getValues().add("nx");
+    groups.getValues().add("svn");
+    groups.getValues().add("git");
+    Attribute age = new Attribute("age");
+    groups.getValues().add(30);
+    Attribute phone = new Attribute("phone");
+    groups.getValues().add("12345678");
+    Attribute mail = new Attribute("mail");
+    groups.getValues().add("test@apache.org");
+    
+    accessToken.getAttributes().add(groups);
+    accessToken.getAttributes().add(age);
+    accessToken.getAttributes().add(phone);
+    accessToken.getAttributes().add(mail);
     
     byte[] tokenBytes = TokenUtils.getBytesOfToken(accessToken);
+    
     String tokenStr = TokenUtils.encodeToken(tokenBytes);
     System.out.println(tokenStr.length());
     

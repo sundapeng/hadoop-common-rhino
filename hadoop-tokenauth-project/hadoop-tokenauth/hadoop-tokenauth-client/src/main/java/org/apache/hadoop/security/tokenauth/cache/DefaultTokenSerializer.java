@@ -190,17 +190,4 @@ class DefaultTokenSerializer extends TokenSerializer {
     }
     return null;
   }
-  
-  public void cleanIdentityTokenFile() {
-    File tokenFile = new File(IDENTITY_TOKEN_FILE);
-    if (tokenFile != null && tokenFile.exists()) {
-      tokenFile.delete();
-    }
-    File tokenFolder = new File(TOKEN_FOLDER);
-    if (tokenFolder != null && tokenFolder.exists()) {
-      tokenFolder.delete();
-    }
-    LOG.info("IdentityTokenFile is deleted");
-  }
-  
 }
