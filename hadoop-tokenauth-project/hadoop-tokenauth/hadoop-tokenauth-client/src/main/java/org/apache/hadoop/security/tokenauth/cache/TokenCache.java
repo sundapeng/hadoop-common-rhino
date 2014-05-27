@@ -44,6 +44,10 @@ public class TokenCache {
     TokenSerializer.get().saveToken(identityToken);
   }
   
+  public static void cleanIdentityToken() {
+    TokenSerializer.get().cleanIdentityTokenFile();
+  }
+  
   public static Callback[] getCallbacks(HASClient hasClient, 
       String principal, String authnFilePath) throws IOException {
     List<Callback> callbacks = TokenSerializer.get().

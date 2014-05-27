@@ -19,11 +19,13 @@
 package org.apache.hadoop.security.tokenauth.token;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.hadoop.security.tokenauth.DataOutputBuffer;
+import org.apache.hadoop.security.tokenauth.secrets.Secrets;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -97,4 +99,31 @@ public class TokenUtils {
   public static byte[] decodeToken(String token) {
     return Base64.decodeBase64(token.getBytes());
   }
+  
+  public static Token createTokenInstance(String tokenName, long id, 
+      Secrets secrets, String issuer, String user, long issueInstant, 
+      long notBefore, long notOnOrAfter, boolean encrypted) throws ClassNotFoundException {
+    Class<?> clazz = Class.forName(tokenName);
+    return (Token) newInstance(clazz, id, secrets, issuer, user, issueInstant,
+        notBefore, notOnOrAfter, encrypted);
+  }
+  
+  public static <T> T newInstance(Class<T> theClass, long id, 
+      Secrets secrets, String issuer, String user, long issueInstant, 
+      long notBefore, long notOnOrAfter, boolean encrypted) {
+    T result;
+    try {
+      Constructor<T> meth = (Constructor<T>) theClass.getDeclaredConstructor(long.class,
+          Secrets.class, String.class, String.class, long.class, long.class, 
+          long.class, boolean.class);
+      meth.setAccessible(true);
+      result = meth.newInstance(id, secrets, issuer, user, issueInstant,
+          notBefore, notOnOrAfter, encrypted);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    
+    return result;
+  }
+  
 }
