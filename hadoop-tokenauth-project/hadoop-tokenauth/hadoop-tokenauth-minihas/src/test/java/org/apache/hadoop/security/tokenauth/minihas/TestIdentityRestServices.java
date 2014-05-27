@@ -44,10 +44,13 @@ import org.junit.Test;
 import org.apache.commons.io.IOUtils;
 
 public class TestIdentityRestServices extends MiniHasTestCase {
+  private String userName = getUserName();
+  private String adminName = getAdminName();
+  private String identityHttpPort = getIdentityHttpPort();
   
   @Test
   public void testHello() throws Exception {
-    URL url = new URL("http://localhost:8786/ws/v1/hello");
+    URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/hello");
     String result = doHttpConnect(url, null, "GET", 
         null, MediaType.APPLICATION_JSON);
     System.out.println(result);
@@ -58,7 +61,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     try {
       IdentityRequest request = new IdentityRequest("12345678", null);
       String content = JsonHelper.toJsonString(request);
-      URL url = new URL("http://localhost:8786/ws/v1/authenticate");
+      URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/authenticate");
       String result = doHttpConnect(url, content, "POST", 
           MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON);
       System.out.println(result);
@@ -74,7 +77,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   
   @Test
   public void testGetSecrets() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:8786", "http://localhost:8787");
+    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -83,7 +86,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(USERNAME);
+        ((NameCallback) cb).setName(userName);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -94,10 +97,10 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     
     String tokenEncode =
         URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
-    String protocolEncode = URLEncoder.encode(USERNAME, "UTF-8");
+    String protocolEncode = URLEncoder.encode(userName, "UTF-8");
     String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" 
         + RESTParams.PROTOCOL + "=" + protocolEncode;
-    URL url = new URL("http://localhost:8786/ws/v1/getSecrets");
+    URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/getSecrets");
     String result = doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     System.out.println(result);
@@ -105,7 +108,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   
   @Test
   public void testRenewToken() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:8786", "http://localhost:8787");
+    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -113,7 +116,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
+        ((NameCallback) cb).setName(adminName);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -124,7 +127,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     System.out.println(token.getId());
     System.out.println(token.getExpiryTime());
     
-    URL url = new URL("http://localhost:8786/ws/v1/renewToken");
+    URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/renewToken");
     String tokenEncode = URLEncoder.encode(
         TokenUtils.encodeToken(TokenUtils.getBytesOfToken(token)),
         "UTF-8");
@@ -144,7 +147,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   
   @Test
   public void testCancelToken() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:8786", "http://localhost:8787");
+    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -152,7 +155,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
+        ((NameCallback) cb).setName(adminName);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -163,7 +166,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     System.out.println(token.getId());
     System.out.println(token.getExpiryTime());
     
-    URL url = new URL("http://localhost:8786/ws/v1/cancelToken");
+    URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/cancelToken");
     String tokenEncode = URLEncoder.encode(
         TokenUtils.encodeToken(TokenUtils.getBytesOfToken(token)),
         "UTF-8");

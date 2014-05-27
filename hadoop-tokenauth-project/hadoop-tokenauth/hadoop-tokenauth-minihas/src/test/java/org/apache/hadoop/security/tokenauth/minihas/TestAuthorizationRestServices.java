@@ -38,13 +38,16 @@ import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 import org.junit.Test;
 
 public class TestAuthorizationRestServices extends MiniHasTestCase {
+  private String userName = getUserName();
+  private String identityHttpPort = getIdentityHttpPort();
+  private String authoHttpPort = getAuthoHttpPort();
   
   @Test
   public void testHello() throws Exception {
     HttpURLConnection conn = null;
     InputStream in = null;
     try {
-      URL url = new URL("http://localhost:8787/ws/v1/hello");
+      URL url = new URL("http://localhost:" + authoHttpPort + "/ws/v1/hello");
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("GET");
@@ -75,7 +78,8 @@ public class TestAuthorizationRestServices extends MiniHasTestCase {
   
   @Test
   public void testAuthorize() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:8786","http://localhost:8787");
+    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort,
+        "http://localhost:" + authoHttpPort);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -83,7 +87,7 @@ public class TestAuthorizationRestServices extends MiniHasTestCase {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(USERNAME);
+        ((NameCallback) cb).setName(userName);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -98,11 +102,11 @@ public class TestAuthorizationRestServices extends MiniHasTestCase {
     try {
       String tokenEncode =
           URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
-      String protocolEncode = URLEncoder.encode(USERNAME, "UTF-8");
+      String protocolEncode = URLEncoder.encode(userName, "UTF-8");
       String contentString =
           RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "=" + protocolEncode;
       byte[] content = contentString.getBytes("UTF-8");
-      URL url = new URL("http://localhost:8787/ws/v1/authorize");
+      URL url = new URL("http://localhost:" + authoHttpPort + "/ws/v1/authorize");
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("POST");

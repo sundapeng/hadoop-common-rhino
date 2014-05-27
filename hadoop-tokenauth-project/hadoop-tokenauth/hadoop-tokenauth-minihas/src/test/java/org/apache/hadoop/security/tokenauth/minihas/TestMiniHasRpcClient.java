@@ -33,12 +33,18 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 public class TestMiniHasRpcClient extends MiniHasTestCase {
+  private String userName = getUserName();
+  private String adminName = getAdminName();
+  private String identityRpcPort = getIdentityRpcPort();
+  private String authoRpcPort = getAuthoRpcPort();
   
   @Test
   public void tesIdentityToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8781");
-    conf.set("hadoop.security.authorization.server.rpc-address", "http://localhost:8782");
+    conf.set("hadoop.security.identity.server.rpc-address", 
+        "http://localhost:" + identityRpcPort);
+    conf.set("hadoop.security.authorization.server.rpc-address", 
+        "http://localhost:" + authoRpcPort);
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
     IdentityResponse response = client.authenticate(request);
@@ -47,7 +53,7 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(USERNAME);
+        ((NameCallback) cb).setName(userName);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -61,8 +67,10 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
   @Test
   public void testAccessToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8781");
-    conf.set("hadoop.security.authorization.server.rpc-address", "http://localhost:8782");
+    conf.set("hadoop.security.identity.server.rpc-address", 
+        "http://localhost:" + identityRpcPort);
+    conf.set("hadoop.security.authorization.server.rpc-address", 
+        "http://localhost:" + authoRpcPort);
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
     IdentityResponse response = client.authenticate(request);
@@ -71,7 +79,7 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(USERNAME);
+        ((NameCallback) cb).setName(userName);
       }
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
@@ -79,17 +87,18 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
     System.out.println(response.getSessionId());
     System.out.println(response.getResultCode());
     System.out.println(response.getIdentityToken().length);
-    //System.out.println(TokenUtils.encodeToken(response.getIdentityToken()));
+    
     byte[] identityTokenBytes = response.getIdentityToken();
     Token identityToken = new IdentityToken(identityTokenBytes);
-    byte[] ac = client.getAccessToken(identityToken, USERNAME);
+    byte[] ac = client.getAccessToken(identityToken, userName);
     System.out.println(ac.length);
   }
   
   @Test
   public void tesRenewToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8781");
+    conf.set("hadoop.security.identity.server.rpc-address", 
+        "http://localhost:" + identityRpcPort);
     conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, "root");
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
@@ -97,7 +106,7 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
+        ((NameCallback) cb).setName(adminName);
       }
     }
     request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
@@ -119,8 +128,8 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
   @Test
   public void tesCancelToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", "http://localhost:8781");
-    conf.set("hadoop.security.authorization.server.rpc-address", "http://localhost:8782");
+    conf.set("hadoop.security.identity.server.rpc-address", 
+        "http://localhost:" + identityRpcPort);
     conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, "root");
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
@@ -128,7 +137,7 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
 
     for (Callback cb : response.getRequiredCallbacks()) {
       if (cb instanceof NameCallback) {
-        ((NameCallback) cb).setName(IDENTITYTOKEN_ADMIN_DEFAULT);
+        ((NameCallback) cb).setName(adminName);
       }
     }
     request = new IdentityRequest(response.getSessionId(), response.getRequiredCallbacks());
