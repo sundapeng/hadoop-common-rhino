@@ -52,7 +52,7 @@ enum ATTRIBUTE_TYPE {
 public class TokenTestCase {
   protected static final String DEFAULT_PRINCIAL_NAME = "test";
   
-  public Token createToken(Secrets secrets, String tokenName) throws Exception {
+  public static Token createToken(Secrets secrets, String tokenName) throws Exception {
     if (secrets == null) {
       secrets = getSecrets();
     }

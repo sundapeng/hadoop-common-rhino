@@ -45,7 +45,12 @@ import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.security.tokenauth.DefaultTokenAuthCallbackHandler;
+import org.apache.hadoop.security.tokenauth.cache.TokenCache;
 import org.apache.hadoop.security.tokenauth.login.TokenAuthLoginModule;
+import org.apache.hadoop.security.tokenauth.token.Token;
+import org.apache.hadoop.security.tokenauth.token.TokenTestCase;
+import org.apache.hadoop.security.tokenauth.token.TokenUtils;
+import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.junit.Test;
 
 class CountFilesAction implements PrivilegedAction<Object> {
@@ -179,15 +184,36 @@ public class TestTokenAuthLoginModule extends MiniHasTestCase {
   }
   
   @Test
-  public void testMyCallbackHandler() throws Exception {
+  public void testLoginUserFromAuthnFile() throws Exception {
     LoginContext lc = new LoginContext("jaas", new Subject(), 
         new MyCallbackHandler(), 
-        getLoginConfiguration(true, true, true, false));
+        getLoginConfiguration(true, false, true, false));
     
     lc.login();
 
     Object o = Subject.doAs(lc.getSubject(), new CountFilesAction());
     System.out.println("User " + lc.getSubject() + " found " + o + " files.");
+  }
+  
+  @Test
+  public void testLoginUserFromTokenCache() throws Exception {
+    Token identityToken = TokenTestCase.createToken(null, IdentityToken.class.getName());
+    byte[] tokenBytes = TokenUtils.getBytesOfToken(identityToken);
+    System.out.println(tokenBytes.length);
+
+    // save token to tokenCache
+    TokenCache.refreshIdentityToken(tokenBytes);
+    
+    // login from reading tokenCache file 
+    LoginContext lc = new LoginContext("jaas", new Subject(), 
+        new MyCallbackHandler(), 
+        getLoginConfiguration(true, true, true, false));
+    lc.login();
+    Object o = Subject.doAs(lc.getSubject(), new CountFilesAction());
+    System.out.println("User " + lc.getSubject() + " found " + o + " files.");
+    
+    // clear tokenCache file
+    TokenCache.cleanIdentityToken();
   }
 
   private javax.security.auth.login.Configuration getLoginConfiguration(
