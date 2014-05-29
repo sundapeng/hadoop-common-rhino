@@ -20,6 +20,9 @@ package org.apache.hadoop.security.tokenauth.jaas;
 
 import static org.junit.Assert.assertEquals;
 
+import java.security.Principal;
+
+import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
@@ -29,34 +32,7 @@ import org.apache.hadoop.security.tokenauth.has.HASConfiguration;
 import org.junit.Test;
 
 public class TestJaasLogin {
-  
-  @Test
-  public void testLogin() throws Exception {
-    Configuration conf = new HASConfiguration();
-    conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_AUTHENTICATORS_KEY, "ldap");
-    conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_LDAP_URL_KEY, "ldap://10.239.47.131");
-    conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_LDAP_BIND_USER_KEY, "CN=HadoopAdmin,CN=Users,DC=ta,DC=sh,DC=intel,DC=com");
-    conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_LDAP_BIND_PASSWORD_KEY, "Front123");
-    conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_LDAP_BASE_DN_KEY, "CN=Users,DC=ta,DC=sh,DC=intel,DC=com");
-    conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_LDAP_QUERY_ATTRIBUTES_KEY, "displayName,userPrincipalName");
-    Login login = new LoginImpl(conf);
-    
-    
-    int result = login.login();
-    
-    assertEquals(result, Login.NOTCOMPLETED);
-    
-    NameCallback nameCb = new NameCallback("username");
-    nameCb.setName("hdfs");
-    PasswordCallback pwdCb = new PasswordCallback("password", false);
-    pwdCb.setPassword("Front123".toCharArray());
-    
-    result = login.login(new Callback[]{nameCb, pwdCb});
-    
-    assertEquals(result, Login.SUCCEED);
-    
-    System.out.println(login.getAttributes());
-  }
+  private static final String USERNAME = System.getProperty("user.name");
   
   @Test
   public void testSimpleLogin() throws Exception {
@@ -76,7 +52,7 @@ public class TestJaasLogin {
     
     assertEquals(result, Login.FAILED);
     
-    nameCb.setName("root");
+    nameCb.setName(USERNAME);
     
     login = new LoginImpl(conf);
     result = login.login(new Callback[]{nameCb});
@@ -89,5 +65,12 @@ public class TestJaasLogin {
     result = login.logout();
     assertEquals(result, Login.SUCCEED);
     assertEquals(login.getLogoutStatus(), Login.SUCCEED);
+    
+    Subject su = login.getSubject();
+    System.out.println(su.getPrincipals().size());
+    
+    for (Principal p : su.getPrincipals()) {
+      System.out.println(p.getName());
+    }
   }
 }

@@ -49,7 +49,6 @@ public class TokenAuthLoginModule implements LoginModule {
   private boolean doNotPrompt = false;
   private boolean useTokenCache = false;
   private boolean useAuthnFile = false;
-  private String tokenCacheName = null;
   private String authnFileName = null;
   private String principalName = null;
   
@@ -75,7 +74,6 @@ public class TokenAuthLoginModule implements LoginModule {
     doNotPrompt = "true".equalsIgnoreCase((String)options.get("doNotPrompt"));
     useTokenCache = "true".equalsIgnoreCase((String)options.get("useTokenCache"));
     useAuthnFile = "true".equalsIgnoreCase((String)options.get("useAuthnFile"));
-    tokenCacheName = (String)options.get("tokenCache");
     authnFileName = (String)options.get("authnFile");
     principalName = (String)options.get("principal");
     renewToken = "true".equalsIgnoreCase((String)options.get("renewToken"));
@@ -105,16 +103,15 @@ public class TokenAuthLoginModule implements LoginModule {
     
     try {
       if (useTokenCache) {
-        if (tokenCacheName != null) {
-          
-        }
         identityToken = TokenCache.getIdentityToken();
         
         if (identityToken != null) {
           if (renewToken) {
             identityToken = renewIdentityToken(identityToken);
           } else {
-            identityToken = null;
+            if (TokenUtils.isExpired(identityToken)) {
+              identityToken = null;
+            }
           }
         }
       }
@@ -164,6 +161,11 @@ public class TokenAuthLoginModule implements LoginModule {
             request = new IdentityRequest(response.getSessionId(), callbacks);
             response = hasClient.authenticate(request);
           }
+          
+          identityToken = TokenFactory.get().createIdentityToken(
+              response.getIdentityToken());
+          secrets = new ValidationSecrets(
+              response.getSecretKey(), response.getPublicKey());
         }
       }
       
@@ -180,8 +182,8 @@ public class TokenAuthLoginModule implements LoginModule {
   private Token renewIdentityToken(Token identityToken) {
     Token token = identityToken;
     try {
-      if(System.currentTimeMillis() >= TokenUtils.getRefreshTime(identityToken)) {
-        token = hasClient.renewToken(identityToken);
+      if(TokenUtils.isExpired(token)) {
+        token = hasClient.renewToken(token);
       }
     } catch (Exception e) {
       token = null;

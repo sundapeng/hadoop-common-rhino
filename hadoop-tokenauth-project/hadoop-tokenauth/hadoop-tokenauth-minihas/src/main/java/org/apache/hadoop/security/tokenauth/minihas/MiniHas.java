@@ -471,4 +471,12 @@ public class MiniHas {
       LOG.info("Min Has started.");
     }
   }
+  
+  public String getAuthFileName() {
+    return AUTHN_FILE;
+  }
+  
+  public String getPrincipal() {
+    return USERNAME;
+  }
 }
