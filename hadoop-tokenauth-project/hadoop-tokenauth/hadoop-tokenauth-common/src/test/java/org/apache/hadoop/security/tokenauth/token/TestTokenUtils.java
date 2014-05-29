@@ -77,7 +77,7 @@ public class TestTokenUtils extends TokenTestCase {
   public void testIsExpired() throws Exception {
     Token identityToken = createToken(null, identityTokenName);
     System.out.println(TokenUtils.isExpired(identityToken));
-    
+    assertEquals(TokenUtils.isExpired(identityToken), false);
   }
   
   @Test

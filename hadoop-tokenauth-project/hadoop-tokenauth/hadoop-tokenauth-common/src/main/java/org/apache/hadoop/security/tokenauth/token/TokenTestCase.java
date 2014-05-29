@@ -57,7 +57,7 @@ public class TokenTestCase {
       secrets = getSecrets();
     }
     
-    long instant = 10000;
+    long instant = System.currentTimeMillis();
     long fiveMins = 5 * 60 * 1000; // in milliseconds
     long oneDay = 24 * 60 * 60 * 1000; // in milliseconds
     
