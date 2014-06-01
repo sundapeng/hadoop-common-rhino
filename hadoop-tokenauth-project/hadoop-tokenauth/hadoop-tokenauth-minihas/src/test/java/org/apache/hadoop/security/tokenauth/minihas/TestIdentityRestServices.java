@@ -20,6 +20,7 @@ package org.apache.hadoop.security.tokenauth.minihas;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -29,24 +30,37 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
+import org.apache.hadoop.security.tokenauth.has.HASConfiguration;
 import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.json.simple.parser.ParseException;
+import org.junit.Before;
 import org.junit.Test;
 
-import org.apache.commons.io.IOUtils;
+import static org.junit.Assert.*;
 
 public class TestIdentityRestServices extends MiniHasTestCase {
   private String userName = getUserName();
   private String adminName = getAdminName();
   private String identityHttpPort = getIdentityHttpPort();
+  private static int RENEW_PERIOD = 60 * 60 * 24;  // unit: second
+
+  @Before
+  public void setUp() throws Exception {
+    // The max lifetime for identity token is 2 days, so it can be renewed only once.
+    hasBuilder.setOtherProperty(
+        HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME_KEY,
+        String.valueOf(60 * 60 * 24 * 2));
+    super.setUp();
+  }
   
   @Test
   public void testHello() throws Exception {
@@ -108,6 +122,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   
   @Test
   public void testRenewToken() throws Exception {
+    // Authenticate to get an identity token.
     HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
@@ -127,24 +142,29 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     System.out.println(token.getId());
     System.out.println(token.getExpiryTime());
     
+    // 1st renewal, expected to be success.
     URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/renewToken");
-    String tokenEncode = URLEncoder.encode(
-        TokenUtils.encodeToken(TokenUtils.getBytesOfToken(token)),
-        "UTF-8");
-    String tokenIdEncode =
-        URLEncoder.encode(token.getId() + "", "UTF-8");
-    String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + 
-        RESTParams.TOKEN_ID + "=" + tokenIdEncode;
+    String content = getRenewTokenContent(token);
 
     String result = doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
 
-    IdentityToken newToken = new IdentityToken(TokenUtils.decodeToken(result));
-    System.out.println(newToken.getUser());
-    System.out.println(newToken.getId());
-    System.out.println(newToken.getExpiryTime());
+    IdentityToken newToken = TokenFactory.get().createIdentityToken(
+        JsonHelper.toIdentityTokenBytes(result));
+    assertEquals(token.getId(), newToken.getId());
+    assertEquals(token.getUser(), newToken.getUser());
+    assertEquals(token.getCreationTime(), newToken.getCreationTime());
+    assertEquals(token.getExpiryTime() + 1000 * RENEW_PERIOD,
+        newToken.getExpiryTime());
+
+    // 2nd renewal, expected to received a response with status code 403.
+    // Currently, this test will fail because the server returns 500 for
+    // tokens reached their max lifetime. This is a wrong status number.
+    content = getRenewTokenContent(newToken);
+    doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED,
+        MediaType.APPLICATION_JSON, HttpURLConnection.HTTP_FORBIDDEN);
   }
-  
+
   @Test
   public void testCancelToken() throws Exception {
     HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
@@ -179,9 +199,15 @@ public class TestIdentityRestServices extends MiniHasTestCase {
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     System.out.println(result);
   }
-  
+
   private String doHttpConnect(URL url, String content, String requestMethod,
       String contentType, String acceptType) throws IOException {
+    return doHttpConnect(url, content, requestMethod, contentType, acceptType,
+        HttpURLConnection.HTTP_OK);
+  }
+
+  private String doHttpConnect(URL url, String content, String requestMethod,
+      String contentType, String acceptType, int expectedStatus) throws IOException {
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     conn.setDoOutput(true);
     conn.setRequestMethod(requestMethod);
@@ -193,29 +219,38 @@ public class TestIdentityRestServices extends MiniHasTestCase {
           "" + String.valueOf(content.getBytes().length));
     }
 
-    return content != null ? sendRequest(conn, content.getBytes()) :
-      sendRequest(conn, null);
+    return content != null ? sendRequest(conn, content.getBytes(), expectedStatus) :
+      sendRequest(conn, null, expectedStatus);
   }
-  
-  private String sendRequest(HttpURLConnection conn, byte[] content)
-      throws IOException {
+
+  private String sendRequest(HttpURLConnection conn, byte[] content,
+      int expectedStatus) throws IOException {
     if (content != null) {
       OutputStream out = conn.getOutputStream();
       out.write(content);
       out.flush();
       out.close();
     }
-    InputStream in = conn.getInputStream();
 
     int httpStatus = conn.getResponseCode();
-    if (httpStatus != 200) {
-      throw new IOException("Server at " + conn.getURL()
-          + " returned non ok status:" + httpStatus + ", message:"
-          + conn.getResponseMessage());
+    assertEquals(expectedStatus, conn.getResponseCode());
+    if (HttpURLConnection.HTTP_OK != httpStatus) {
+      return conn.getResponseMessage();
     }
+
+    InputStream in = conn.getInputStream();
     String result = IOUtils.toString(in);
     if (in != null)
       in.close();
     return result;
+  }
+
+  private String getRenewTokenContent(IdentityToken token)
+      throws UnsupportedEncodingException, IOException {
+    String tokenEncode = URLEncoder.encode(
+        TokenUtils.encodeToken(TokenUtils.getBytesOfToken(token)), "UTF-8");
+    String tokenIdEncode = URLEncoder.encode(token.getId() + "", "UTF-8");
+    return RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&"
+        + RESTParams.TOKEN_ID + "=" + tokenIdEncode;
   }
 }

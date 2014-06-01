@@ -28,8 +28,8 @@ import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 public class TestMiniHasHttpClient extends MiniHasTestCase {
@@ -39,8 +39,8 @@ public class TestMiniHasHttpClient extends MiniHasTestCase {
   private static String authoHttpPort = "10087";
   private static MiniHas has;
   
-  @BeforeClass
-  public static void setUp() throws Exception {
+  @Before
+  public void setUp() throws Exception {
     has = new MiniHas.Builder()
               .setIdentityHttpAddr("localhost:" + identityHttpPort)
               .setAuthoHttpAddr("localhost:" + authoHttpPort)
@@ -48,8 +48,8 @@ public class TestMiniHasHttpClient extends MiniHasTestCase {
     has.waitHasUp();
   }
   
-  @AfterClass
-  public static void tearDown() throws Exception {
+  @After
+  public void tearDown() throws Exception {
     if(has != null) {
       has.shutdown();
     }

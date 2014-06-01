@@ -17,55 +17,60 @@
  */
 package org.apache.hadoop.security.tokenauth.minihas;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 
 /**
  * MiniHasTestCase provides a base class for using MiniHas with other
  * testcases. MiniHasTestCase starts the MiniHas (@Before) before
  * running tests, and stop the MiniHas (@After) after the testcases.
  * <p>
- * Users can directly inherit this class and implement their own test 
+ * Users can directly inherit this class and implement their own test
  * functions using the default ports, or override functions setUp() and
  * tearDown() to use new ports.
  *
  */
 
 public class MiniHasTestCase {
-  private static MiniHas has;
+  protected MiniHas.Builder hasBuilder;
+  private MiniHas has;
   private static final String USERNAME = System.getProperty("user.name");
   private static final String IDENTITYTOKEN_ADMIN_DEFAULT = USERNAME;
   private static String identityHttpDefaultPort = "8786";
   private static String AuthoHttpDefaultPort = "8787";
   private static String identityRpcDefaultPort = "8781";
   private static String AuthoRpcDefaultPort = "8782";
-  
-  @BeforeClass
-  public static void setUp() throws Exception {
-    has = new MiniHas.Builder()
-              .setIdentityHttpAddr("localhost:" + identityHttpDefaultPort)
-              .setAuthoHttpAddr("localhost:" + AuthoHttpDefaultPort)
-              .setIdentityRpcAddr("localhost:" + identityRpcDefaultPort)
-              .setAuthoRpcAddr("localhost:" + AuthoRpcDefaultPort)
-              .build();
+
+  public MiniHasTestCase() {
+    // Set default values to hasBuilder
+    hasBuilder = new MiniHas.Builder()
+        .setIdentityHttpAddr("localhost:" + identityHttpDefaultPort)
+        .setAuthoHttpAddr("localhost:" + AuthoHttpDefaultPort)
+        .setIdentityRpcAddr("localhost:" + identityRpcDefaultPort)
+        .setAuthoRpcAddr("localhost:" + AuthoRpcDefaultPort);
+  }
+
+  @Before
+  public void setUp() throws Exception {
+    has = hasBuilder.build();
     has.waitHasUp();
   }
-  
-  @AfterClass
-  public static void tearDown() throws Exception {
-    if(has != null) {
+
+  @After
+  public void tearDown() throws Exception {
+    if (has != null) {
       has.shutdown();
     }
   }
-  
+
   public MiniHas getHas() {
     return has;
   }
-  
+
   public String getUserName() {
     return USERNAME;
   }
-  
+
   public String getAdminName() {
     return IDENTITYTOKEN_ADMIN_DEFAULT;
   }
