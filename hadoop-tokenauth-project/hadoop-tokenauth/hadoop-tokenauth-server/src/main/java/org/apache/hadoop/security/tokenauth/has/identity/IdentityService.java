@@ -70,7 +70,7 @@ public class IdentityService {
   private IdentityService(Configuration conf) throws IllegalArgumentException {
     this.conf = conf;
     IDENTITY_TOKEN_MAX_LIFETIME = conf.getLong(
-        HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME, 0) * 1000;
+        HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME_KEY, 0) * 1000;
     IDENTITY_TOKEN_EXTENSION_PERIOD = conf.getLong(
         HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_RENEW_EXTENSION_PERIOD_KEY,
         DEFAULT_IDENTITY_TOKEN_EXTENSION_PERIOD) * 1000;

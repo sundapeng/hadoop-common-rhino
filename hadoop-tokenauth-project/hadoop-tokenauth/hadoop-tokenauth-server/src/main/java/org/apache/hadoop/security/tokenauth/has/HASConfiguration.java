@@ -130,7 +130,7 @@ public class HASConfiguration extends Configuration {
       HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.token.renewable";
   public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_RENEW_TIME_KEY =
       HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.token.max.renew.time";
-  public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME =
+  public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_MAX_LIFETIME_KEY =
       HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.token.max.lifetime";
   public static final String HADOOP_SECURITY_TOKENAUTH_IDENTITY_TOKEN_RENEW_EXTENSION_PERIOD_KEY =
       HADOOP_SECURITY_TOKENAUTH_CONFIG_PREFIX + ".identity.token.renew.extension.period";
