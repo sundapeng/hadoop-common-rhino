@@ -171,6 +171,20 @@ public class JsonHelper {
     }
   }
 
+  public static byte[] toIdentityTokenBytes(String jsonString)
+      throws IOException {
+    try {
+      JSONObject object = getJsonObject(jsonString);
+      if (null != object.get(IDENTITY_TOKEN)) {
+        return TokenUtils.decodeToken((String) object.get(IDENTITY_TOKEN));
+      } else {
+        return null;
+      }
+    } catch (ParseException e) {
+      throw new IOException(e);
+    }
+  }
+
   public static String toJsonString(IdentityResponse identityResponse) {
     if (identityResponse == null) {
       throw new NullPointerException();

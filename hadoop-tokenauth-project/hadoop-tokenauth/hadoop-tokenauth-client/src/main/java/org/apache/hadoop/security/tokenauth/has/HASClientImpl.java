@@ -31,8 +31,8 @@ import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
 import org.apache.hadoop.security.tokenauth.token.Token;
+import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
-import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 
 import org.apache.commons.io.IOUtils;
 import org.json.simple.parser.ParseException;
@@ -107,7 +107,8 @@ public class HASClientImpl extends HASClient {
     String result = doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
 
-    return new IdentityToken(TokenUtils.decodeToken(result));
+    return TokenFactory.get().createIdentityToken(
+            JsonHelper.toIdentityTokenBytes(result));
   }
 
   @Override
