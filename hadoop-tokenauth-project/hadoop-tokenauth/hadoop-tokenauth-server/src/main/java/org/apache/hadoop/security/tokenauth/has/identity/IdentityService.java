@@ -47,7 +47,9 @@ import org.apache.hadoop.security.tokenauth.jaas.session.SessionManager;
 import org.apache.hadoop.security.tokenauth.secrets.Secrets;
 import org.apache.hadoop.security.tokenauth.secrets.SecretsManager;
 import org.apache.hadoop.security.tokenauth.token.Attribute;
+import org.apache.hadoop.security.tokenauth.token.InvalidTokenException;
 import org.apache.hadoop.security.tokenauth.token.Token;
+import org.apache.hadoop.security.tokenauth.token.TokenAccessDeniedException;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
@@ -151,7 +153,7 @@ public class IdentityService {
     // Check expire time and max lifetime
     if (identityToken.getExpiryTime() >= identityToken.getCreationTime()
         + IDENTITY_TOKEN_MAX_LIFETIME) {
-      throw new IOException("This token cannot be renewed. It has reached the renewal limitation. "
+      throw new InvalidTokenException("This token cannot be renewed. It has reached the renewal limitation. "
           + "Please get a new token.");
     }
 
@@ -171,7 +173,7 @@ public class IdentityService {
     return TokenUtils.getBytesOfToken(newToken);
   }
 
-  public void cancelToken(byte[] tokenBytes, long tokenId) throws IOException {
+  public void cancelToken(byte[] tokenBytes, long tokenId) throws IOException, TokenAccessDeniedException {
     // Validate current token
     IdentityToken identityToken = (IdentityToken) tokenFactory.createIdentityToken(
         getValidationSecrets(), tokenBytes);
@@ -230,11 +232,11 @@ public class IdentityService {
       if (null != ti) {
         return tokenStorage.get(targetTokenId).getToken();
       } else {
-        throw new IOException("Invalid token ID. Please make sure the identity "
+        throw new InvalidTokenException("Invalid token ID. Please make sure the identity "
             + "server has issued a token with specified ID and this token is still invalid.");
       }
     } else {
-      throw new IOException(
+      throw new TokenAccessDeniedException(
           "Permission denied. Only identity server administrators can manage tokens.");
     }
   }

@@ -38,6 +38,8 @@ import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
 import org.apache.hadoop.security.tokenauth.has.identity.IdentityService;
 import org.apache.hadoop.security.tokenauth.secrets.Secrets;
+import org.apache.hadoop.security.tokenauth.token.InvalidTokenException;
+import org.apache.hadoop.security.tokenauth.token.TokenAccessDeniedException;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 
 @Path("")
@@ -93,7 +95,18 @@ public class IdentityRESTServices {
   public Response renewToken(
       @FormParam(RESTParams.IDENTITY_TOKEN) String identityToken,
       @FormParam(RESTParams.TOKEN_ID) long tokenId) throws IOException {
-    byte[] token = getIdentityService().renewToken(TokenUtils.decodeToken(identityToken), tokenId);
+    byte[] token = null;
+    try{
+        token = getIdentityService().renewToken(TokenUtils.decodeToken(identityToken), tokenId);
+    }
+    catch(IOException e){
+      if(e instanceof InvalidTokenException || e instanceof TokenAccessDeniedException){
+        return createForbiddenResponse(e.getMessage());
+      }
+      else{
+        throw new IOException(e);
+      }
+    }
     String json = JsonHelper.toJsonString(RESTParams.IDENTITY_TOKEN, 
         TokenUtils.encodeToken(token));
     return Response.ok(json).type(MediaType.APPLICATION_JSON).build();
@@ -108,5 +121,14 @@ public class IdentityRESTServices {
       @FormParam(RESTParams.TOKEN_ID) long tokenId) throws IOException {
     getIdentityService().cancelToken(TokenUtils.decodeToken(identityToken), tokenId);
     return Response.ok().type(MediaType.APPLICATION_OCTET_STREAM).build();
+  }
+
+  /**
+   * Create a HTTP response with status 403
+   * @param message the content of the response
+   * @return
+   */
+  private Response createForbiddenResponse(String message) {
+    return Response.status(403).build();
   }
 }

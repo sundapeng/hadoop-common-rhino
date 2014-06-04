@@ -27,7 +27,8 @@ import org.junit.Before;
  * <p>
  * Users can directly inherit this class and implement their own test
  * functions using the default ports, or override functions setUp() and
- * tearDown() to use new ports.
+ * tearDown() to set other configurations to hasBuilder and invoke
+ * super's setUp() to start mini has server.
  *
  */
 
@@ -50,6 +51,13 @@ public class MiniHasTestCase {
         .setAuthoRpcAddr("localhost:" + AuthoRpcDefaultPort);
   }
 
+  /**
+   * Set up test environment.
+   * It will start mini has server. You can override this function to
+   * set some custom configurations for hasBuilder and invoke
+   * super.setUp() to start the server.
+   * @throws Exception
+   */
   @Before
   public void setUp() throws Exception {
     has = hasBuilder.build();

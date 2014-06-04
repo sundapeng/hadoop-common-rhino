@@ -234,11 +234,13 @@ public class TestIdentityRestServices extends MiniHasTestCase {
 
     int httpStatus = conn.getResponseCode();
     assertEquals(expectedStatus, conn.getResponseCode());
-    if (HttpURLConnection.HTTP_OK != httpStatus) {
-      return conn.getResponseMessage();
+    InputStream in;
+    if(HttpURLConnection.HTTP_OK == httpStatus){
+      in = conn.getInputStream();
     }
-
-    InputStream in = conn.getInputStream();
+    else{
+      in = conn.getErrorStream();
+    }
     String result = IOUtils.toString(in);
     if (in != null)
       in.close();
