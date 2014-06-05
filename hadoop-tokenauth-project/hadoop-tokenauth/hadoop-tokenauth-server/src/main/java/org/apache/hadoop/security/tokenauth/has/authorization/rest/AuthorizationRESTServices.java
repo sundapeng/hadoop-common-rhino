@@ -33,6 +33,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
+import org.apache.hadoop.security.tokenauth.has.RestUtil;
 import org.apache.hadoop.security.tokenauth.has.authorization.AuthorizationService;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 
@@ -64,9 +65,14 @@ public class AuthorizationRESTServices {
       @FormParam(RESTParams.IDENTITY_TOKEN) String identityToken,
       @FormParam(RESTParams.PROTOCOL) String protocol) throws IOException {
     String remoteAddr = request.getRemoteAddr();
-    byte[] accessToken = getAuthorizationService().getAccessToken(
-        TokenUtils.decodeToken(identityToken), protocol, remoteAddr);
-    
+    byte[] accessToken;
+    try{
+      accessToken = getAuthorizationService().getAccessToken(TokenUtils.decodeToken(identityToken),
+          protocol, remoteAddr);
+    }
+    catch(IOException e){
+      return RestUtil.handleException(e);
+    }
     String json = JsonHelper.toJsonString(RESTParams.ACCESS_TOKEN, 
         TokenUtils.encodeToken(accessToken));
     return Response.ok(json).type(MediaType.APPLICATION_JSON).build();

@@ -36,6 +36,7 @@ import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
+import org.apache.hadoop.security.tokenauth.has.RestUtil;
 import org.apache.hadoop.security.tokenauth.has.identity.IdentityService;
 import org.apache.hadoop.security.tokenauth.secrets.Secrets;
 import org.apache.hadoop.security.tokenauth.token.InvalidTokenException;
@@ -100,12 +101,7 @@ public class IdentityRESTServices {
         token = getIdentityService().renewToken(TokenUtils.decodeToken(identityToken), tokenId);
     }
     catch(IOException e){
-      if(e instanceof InvalidTokenException || e instanceof TokenAccessDeniedException){
-        return createForbiddenResponse(e.getMessage());
-      }
-      else{
-        throw new IOException(e);
-      }
+      return RestUtil.handleException(e);
     }
     String json = JsonHelper.toJsonString(RESTParams.IDENTITY_TOKEN, 
         TokenUtils.encodeToken(token));
@@ -119,16 +115,12 @@ public class IdentityRESTServices {
   public Response cancelToken(
       @FormParam(RESTParams.IDENTITY_TOKEN) String identityToken,
       @FormParam(RESTParams.TOKEN_ID) long tokenId) throws IOException {
-    getIdentityService().cancelToken(TokenUtils.decodeToken(identityToken), tokenId);
+    try{
+      getIdentityService().cancelToken(TokenUtils.decodeToken(identityToken), tokenId);
+    }
+    catch (IOException e){
+      return RestUtil.handleException(e);
+    }
     return Response.ok().type(MediaType.APPLICATION_OCTET_STREAM).build();
-  }
-
-  /**
-   * Create a HTTP response with status 403
-   * @param message the content of the response
-   * @return
-   */
-  private Response createForbiddenResponse(String message) {
-    return Response.status(403).build();
   }
 }

@@ -44,7 +44,9 @@ import org.apache.hadoop.security.tokenauth.has.protocol.SecretsProtocol;
 import org.apache.hadoop.security.tokenauth.has.protocolPB.SecretsProtocolClientSideTranslatorPB;
 import org.apache.hadoop.security.tokenauth.rpc.pb.IdentityServiceProtocolClientSideTranslatorPB;
 import org.apache.hadoop.security.tokenauth.secrets.Secrets;
+import org.apache.hadoop.security.tokenauth.token.InvalidTokenException;
 import org.apache.hadoop.security.tokenauth.token.Token;
+import org.apache.hadoop.security.tokenauth.token.TokenAccessDeniedException;
 import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 import org.apache.hadoop.security.tokenauth.token.impl.AccessToken;
@@ -125,14 +127,14 @@ public class AuthorizationService {
     ensureConnectIdentityServer();
     if(!identityServiceProtocal.validateToken(tokenBytes)){
       Log.info("Identity server reported it is an invalid identity token.");
-      throw new IOException("Invalid identity token. Please make sure this token is not expired or revoked.");
+      throw new InvalidTokenException("Invalid identity token. Please make sure this token is not expired or revoked.");
     }
     
     /*user identity token*/
     Token identityToken = tokenFactory.createIdentityToken(getValidationSecrets(), tokenBytes); 
     
     if (!doAuthorization(identityToken, protocol, remoteAddr)) {
-      throw new IOException("Client doesn't have previlege to access requested service: " + protocol);
+      throw new TokenAccessDeniedException("Client doesn't have previlege to access requested service: " + protocol);
     }
     
     if (Time.now() >= TokenUtils.getRefreshTime(getLoginToken())) {

@@ -40,6 +40,7 @@ import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 import org.apache.hadoop.security.tokenauth.has.HASConfiguration;
 import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
+import org.apache.hadoop.security.tokenauth.token.impl.AccessToken;
 import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.json.simple.parser.ParseException;
 import org.junit.Before;
@@ -112,7 +113,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     String tokenEncode =
         URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
     String protocolEncode = URLEncoder.encode(userName, "UTF-8");
-    String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" 
+    String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&"
         + RESTParams.PROTOCOL + "=" + protocolEncode;
     URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/getSecrets");
     String result = doHttpConnect(url, content, "POST", 
@@ -167,6 +168,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
 
   @Test
   public void testCancelToken() throws Exception {
+    // Get an identity token
     HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
@@ -182,22 +184,39 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     response = client.authenticate(request);
     IdentityToken token = (IdentityToken) TokenFactory.get().createIdentityToken(
         null, response.getIdentityToken());
-    System.out.println(token.getUser());
-    System.out.println(token.getId());
-    System.out.println(token.getExpiryTime());
     
-    URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/cancelToken");
-    String tokenEncode = URLEncoder.encode(
+    // Validate identity token
+    URL url = new URL("http://localhost:" + getAuthoHttpPort() + "/ws/v1/authorize");
+    String tokenEncode = URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
+    String protocolEncode = URLEncoder.encode(userName, "UTF-8");
+    String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "="
+        + protocolEncode;
+    String authorizationResult = doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED,
+        MediaType.APPLICATION_JSON);
+    AccessToken accessToken=(AccessToken) TokenFactory.get().createAccessToken(JsonHelper.toAccessTokenBytes(authorizationResult));
+    assertEquals(userName,accessToken.getUser());
+
+    // Revoke the identity token
+    url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/cancelToken");
+    tokenEncode = URLEncoder.encode(
         TokenUtils.encodeToken(TokenUtils.getBytesOfToken(token)),
         "UTF-8");
     String tokenIdEncode =
         URLEncoder.encode(token.getId() + "", "UTF-8");
-    String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + 
+    content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + 
         RESTParams.TOKEN_ID + "=" + tokenIdEncode;
 
     String result = doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     System.out.println(result);
+
+    // Try to get an access token with revoked identity token
+    url = new URL("http://localhost:" + getAuthoHttpPort() + "/ws/v1/authorize");
+    tokenEncode = URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
+    content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "="
+        + protocolEncode;
+    doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED,
+        MediaType.APPLICATION_JSON, HttpURLConnection.HTTP_FORBIDDEN);
   }
 
   private String doHttpConnect(URL url, String content, String requestMethod,
