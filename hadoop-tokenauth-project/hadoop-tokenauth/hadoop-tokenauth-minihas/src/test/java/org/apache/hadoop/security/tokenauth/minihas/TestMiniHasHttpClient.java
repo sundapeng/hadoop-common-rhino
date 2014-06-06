@@ -28,36 +28,27 @@ import org.apache.hadoop.security.tokenauth.token.impl.IdentityToken;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class TestMiniHasHttpClient extends MiniHasTestCase {
   private String userName = getUserName();
   private String adminName = getAdminName();
-  private static String identityHttpPort = "10086";
-  private static String authoHttpPort = "10087";
-  private static MiniHas has;
+  private String identityHttpPort = "10086";
+  private String authzHttpPort = "10087";
+  private String identityServerUrl = "http://localhost:" + identityHttpPort;
+  private String authzServerUrl = "http://localhost:" + authzHttpPort;
   
   @Before
   public void setUp() throws Exception {
-    has = new MiniHas.Builder()
-              .setIdentityHttpAddr("localhost:" + identityHttpPort)
-              .setAuthoHttpAddr("localhost:" + authoHttpPort)
-              .build();
-    has.waitHasUp();
-  }
-  
-  @After
-  public void tearDown() throws Exception {
-    if(has != null) {
-      has.shutdown();
-    }
+    setIdentityHttpPort(identityHttpPort);
+    setAuthzHttpPort(authzHttpPort);
+    super.setUp();
   }
   
   @Test
   public void testAuthn() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
+    HASClient client = new HASClientImpl(identityServerUrl, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -76,8 +67,7 @@ public class TestMiniHasHttpClient extends MiniHasTestCase {
 
   @Test
   public void testAccessToken() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, 
-        "http://localhost:" + authoHttpPort);
+    HASClient client = new HASClientImpl(identityServerUrl, authzServerUrl);
     IdentityRequest request = new IdentityRequest("12345678", null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -102,7 +92,7 @@ public class TestMiniHasHttpClient extends MiniHasTestCase {
   
   @Test
   public void tesRenewToken() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
+    HASClient client = new HASClientImpl(identityServerUrl, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
 
@@ -129,7 +119,7 @@ public class TestMiniHasHttpClient extends MiniHasTestCase {
   
   @Test
   public void tesCancelToken() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
+    HASClient client = new HASClientImpl(identityServerUrl, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
 

@@ -51,12 +51,10 @@ import static org.junit.Assert.*;
 public class TestIdentityRestServices extends MiniHasTestCase {
   private String userName = getUserName();
   private String adminName = getAdminName();
-  private String identityHttpPort = getIdentityHttpPort();
-  private String authzHttpPort = getAuthoHttpPort();
   private static int RENEW_PERIOD = 60 * 60 * 24;  // unit: second
   
-  private String identityServerUrl = "http://localhost:" + identityHttpPort;
-  private String authzServerUrl = "http://localhost:" + authzHttpPort;
+  private String identityServerUrl = "http://localhost:" + getIdentityHttpPort();
+  private String authzServerUrl = "http://localhost:" + getAuthzHttpPort();
   private static final String PATH_V1 = RESTParams.PATH_V1;
   private static final String HELLO_URL = RESTParams.HELLO_PATH_SPEC;
   private static final String AUTHENTICATE_URL = RESTParams.AUTHENTICATE_SERVLET_PATH_SPEC;

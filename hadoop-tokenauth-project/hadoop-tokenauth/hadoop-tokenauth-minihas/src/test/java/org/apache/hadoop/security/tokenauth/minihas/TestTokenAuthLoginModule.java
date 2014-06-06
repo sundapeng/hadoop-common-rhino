@@ -161,7 +161,7 @@ class MyCallbackHandler implements CallbackHandler {
 
 public class TestTokenAuthLoginModule extends MiniHasTestCase {
   private String identityHttpUrl = "localhost:" + getIdentityHttpPort();
-  private String authoHttpUrl = "localhost:" + getAuthoHttpPort();
+  private String authzHttpUrl = "localhost:" + getAuthzHttpPort();
   
   @Test
   public void testTokenAuthCallbackHandler() throws Exception {
@@ -169,7 +169,7 @@ public class TestTokenAuthLoginModule extends MiniHasTestCase {
     conf.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_IDENTITY_SERVER_HTTP_ADDRESS_KEY,
         identityHttpUrl);
     conf.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY,
-        authoHttpUrl);
+        authzHttpUrl);
     conf.setBoolean(CommonConfigurationKeysPublic.HADOOP_SECURITY_TOKENAUTH_SERVER_SSL_ENABLED_KEY,
         false);
     
@@ -225,7 +225,7 @@ public class TestTokenAuthLoginModule extends MiniHasTestCase {
         List<AppConfigurationEntry> entries = new ArrayList<AppConfigurationEntry>();
         Map<String, String> options = new HashMap<String, String>();
         options.put("identityServer", "http://" + identityHttpUrl);
-        options.put("authorizationServer", "http://" + authoHttpUrl);
+        options.put("authorizationServer", "http://" + authzHttpUrl);
         options.put("doNotPrompt", Boolean.toString(doNotPrompt));
         options.put("useTokenCache", Boolean.toString(useTokenCache));
         options.put("useAuthnFile", Boolean.toString(useAuthnFile));

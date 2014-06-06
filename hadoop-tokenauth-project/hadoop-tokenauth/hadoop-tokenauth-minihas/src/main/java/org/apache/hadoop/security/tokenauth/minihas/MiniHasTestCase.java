@@ -37,30 +37,31 @@ public class MiniHasTestCase {
   private MiniHas has;
   private static final String USERNAME = System.getProperty("user.name");
   private static final String IDENTITYTOKEN_ADMIN_DEFAULT = USERNAME;
-  private static String identityHttpDefaultPort = "8786";
-  private static String AuthoHttpDefaultPort = "8787";
-  private static String identityRpcDefaultPort = "8781";
-  private static String AuthoRpcDefaultPort = "8782";
+  private String identityHttpPort = "8786";
+  private String authzHttpPort = "8787";
+  private String identityRpcPort = "8781";
+  private String authzRpcPort = "8782";
 
   public MiniHasTestCase() {
-    // Set default values to hasBuilder
-    hasBuilder = new MiniHas.Builder()
-        .setIdentityHttpAddr("localhost:" + identityHttpDefaultPort)
-        .setAuthoHttpAddr("localhost:" + AuthoHttpDefaultPort)
-        .setIdentityRpcAddr("localhost:" + identityRpcDefaultPort)
-        .setAuthoRpcAddr("localhost:" + AuthoRpcDefaultPort);
+    hasBuilder = new MiniHas.Builder();
   }
 
   /**
    * Set up test environment.
-   * It will start mini has server. You can override this function to
-   * set some custom configurations for hasBuilder and invoke
-   * super.setUp() to start the server.
+   * It will start mini has server. You can override this function,
+   * use setXXXport() to set identity/authz's http/rpc port,
+   * or set some custom configurations for hasBuilder,
+   * then invoke super.setUp() to start the server.
    * @throws Exception
    */
   @Before
   public void setUp() throws Exception {
-    has = hasBuilder.build();
+    has = hasBuilder
+        .setIdentityHttpAddr("localhost:" + identityHttpPort)
+        .setAuthoHttpAddr("localhost:" + authzHttpPort)
+        .setIdentityRpcAddr("localhost:" + identityRpcPort)
+        .setAuthoRpcAddr("localhost:" + authzRpcPort)
+        .build();
     has.waitHasUp();
   }
 
@@ -84,19 +85,39 @@ public class MiniHasTestCase {
   }
 
   public String getIdentityHttpPort() {
-    return identityHttpDefaultPort;
+    return identityHttpPort;
   }
 
-  public static String getAuthoHttpPort() {
-    return AuthoHttpDefaultPort;
+  public String getAuthzHttpPort() {
+    return authzHttpPort;
   }
 
-  public static String getIdentityRpcPort() {
-    return identityRpcDefaultPort;
+  public String getIdentityRpcPort() {
+    return identityRpcPort;
   }
 
-  public static String getAuthoRpcPort() {
-    return AuthoRpcDefaultPort;
+  public String getAuthoRpcPort() {
+    return authzRpcPort;
   }
 
+  public String getAuthzRpcPort() {
+    return authzRpcPort;
+  }
+
+  public void setAuthzRpcPort(String port) {
+    this.authzRpcPort = port;
+  }
+
+  public void setIdentityHttpPort(String port) {
+    this.identityHttpPort = port;
+  }
+
+  public void setAuthzHttpPort(String port) {
+    this.authzHttpPort = port;
+  }
+
+  public void setIdentityRpcPort(String port) {
+    this.identityRpcPort = port;
+  }
+  
 }

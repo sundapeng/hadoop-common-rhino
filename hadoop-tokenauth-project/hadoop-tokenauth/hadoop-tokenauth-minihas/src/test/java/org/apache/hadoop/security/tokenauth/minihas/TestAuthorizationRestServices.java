@@ -39,15 +39,18 @@ import org.junit.Test;
 
 public class TestAuthorizationRestServices extends MiniHasTestCase {
   private String userName = getUserName();
-  private String identityHttpPort = getIdentityHttpPort();
-  private String authoHttpPort = getAuthoHttpPort();
+  private String identityServerUrl = "http://localhost:" + getIdentityHttpPort();
+  private String authzServerUrl = "http://localhost:" + getAuthzHttpPort();
+  private static final String PATH_V1 = RESTParams.PATH_V1;
+  private static final String HELLO_URL = RESTParams.HELLO_PATH_SPEC;
+  private static final String DO_GET_ACCESS_TOKEN_URL = RESTParams.AUTHORIZE_SERVLET_PATH_SPEC;
   
   @Test
   public void testHello() throws Exception {
     HttpURLConnection conn = null;
     InputStream in = null;
     try {
-      URL url = new URL("http://localhost:" + authoHttpPort + "/ws/v1/hello");
+      URL url = new URL(authzServerUrl + PATH_V1 + HELLO_URL);
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("GET");
@@ -78,8 +81,7 @@ public class TestAuthorizationRestServices extends MiniHasTestCase {
   
   @Test
   public void testAuthorize() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort,
-        "http://localhost:" + authoHttpPort);
+    HASClient client = new HASClientImpl(identityServerUrl, authzServerUrl);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -106,7 +108,7 @@ public class TestAuthorizationRestServices extends MiniHasTestCase {
       String contentString =
           RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "=" + protocolEncode;
       byte[] content = contentString.getBytes("UTF-8");
-      URL url = new URL("http://localhost:" + authoHttpPort + "/ws/v1/authorize");
+      URL url = new URL(authzServerUrl + PATH_V1 + DO_GET_ACCESS_TOKEN_URL);
       conn = (HttpURLConnection)url.openConnection();
       conn.setDoOutput(true);
       conn.setRequestMethod("POST");
