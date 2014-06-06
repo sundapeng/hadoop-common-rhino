@@ -52,7 +52,18 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   private String userName = getUserName();
   private String adminName = getAdminName();
   private String identityHttpPort = getIdentityHttpPort();
+  private String authzHttpPort = getAuthoHttpPort();
   private static int RENEW_PERIOD = 60 * 60 * 24;  // unit: second
+  
+  private String identityServerUrl = "http://localhost:" + identityHttpPort;
+  private String authzServerUrl = "http://localhost:" + authzHttpPort;
+  private static final String PATH_V1 = RESTParams.PATH_V1;
+  private static final String HELLO_URL = RESTParams.HELLO_PATH_SPEC;
+  private static final String AUTHENTICATE_URL = RESTParams.AUTHENTICATE_SERVLET_PATH_SPEC;
+  private static final String GET_SECRETS_URL = RESTParams.GET_SECRETS_PATH_SPEC;
+  private static final String RENEW_TOKEN_URL = RESTParams.RENEW_TOKEN_PATH_SPEC;
+  private static final String CANCEL_TOKEN_URL = RESTParams.CANCEL_TOKEN_PATH_SPEC;
+  private static final String DO_GET_ACCESS_TOKEN_URL = RESTParams.AUTHORIZE_SERVLET_PATH_SPEC;
 
   @Before
   public void setUp() throws Exception {
@@ -65,7 +76,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   
   @Test
   public void testHello() throws Exception {
-    URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/hello");
+    URL url = new URL(identityServerUrl + PATH_V1 + HELLO_URL);
     String result = doHttpConnect(url, null, "GET", 
         null, MediaType.APPLICATION_JSON);
     System.out.println(result);
@@ -76,7 +87,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     try {
       IdentityRequest request = new IdentityRequest("12345678", null);
       String content = JsonHelper.toJsonString(request);
-      URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/authenticate");
+      URL url = new URL(identityServerUrl + PATH_V1 + AUTHENTICATE_URL);
       String result = doHttpConnect(url, content, "POST", 
           MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON);
       System.out.println(result);
@@ -92,7 +103,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   
   @Test
   public void testGetSecrets() throws Exception {
-    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
+    HASClient client = new HASClientImpl(identityServerUrl, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -115,7 +126,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     String protocolEncode = URLEncoder.encode(userName, "UTF-8");
     String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&"
         + RESTParams.PROTOCOL + "=" + protocolEncode;
-    URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/getSecrets");
+    URL url = new URL(identityServerUrl + PATH_V1 + GET_SECRETS_URL);
     String result = doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     System.out.println(result);
@@ -124,7 +135,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   @Test
   public void testRenewToken() throws Exception {
     // Authenticate to get an identity token.
-    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
+    HASClient client = new HASClientImpl(identityServerUrl, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -137,19 +148,19 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
     response = client.authenticate(request);
-    IdentityToken token = (IdentityToken) TokenFactory.get().createIdentityToken(
+    IdentityToken token = TokenFactory.get().createIdentityToken(
         null, response.getIdentityToken());
     System.out.println(token.getUser());
     System.out.println(token.getId());
     System.out.println(token.getExpiryTime());
     
     // 1st renewal, expected to be success.
-    URL url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/renewToken");
+    URL url = new URL(identityServerUrl + PATH_V1 + RENEW_TOKEN_URL);
     String content = getRenewTokenContent(token);
-
     String result = doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
-
+    System.out.println(result);
+    
     IdentityToken newToken = TokenFactory.get().createIdentityToken(
         JsonHelper.toIdentityTokenBytes(result));
     assertEquals(token.getId(), newToken.getId());
@@ -159,8 +170,6 @@ public class TestIdentityRestServices extends MiniHasTestCase {
         newToken.getExpiryTime());
 
     // 2nd renewal, expected to received a response with status code 403.
-    // Currently, this test will fail because the server returns 500 for
-    // tokens reached their max lifetime. This is a wrong status number.
     content = getRenewTokenContent(newToken);
     doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED,
         MediaType.APPLICATION_JSON, HttpURLConnection.HTTP_FORBIDDEN);
@@ -169,7 +178,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   @Test
   public void testCancelToken() throws Exception {
     // Get an identity token
-    HASClient client = new HASClientImpl("http://localhost:" + identityHttpPort, null);
+    HASClient client = new HASClientImpl(identityServerUrl, null);
     IdentityRequest request = new IdentityRequest(null, null);
     IdentityResponse response = client.authenticate(request);
     System.out.println(response.getSessionId());
@@ -182,40 +191,36 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     }
     request = new IdentityRequest(response.getSessionId(),response.getRequiredCallbacks());
     response = client.authenticate(request);
-    IdentityToken token = (IdentityToken) TokenFactory.get().createIdentityToken(
+    IdentityToken token = TokenFactory.get().createIdentityToken(
         null, response.getIdentityToken());
     
     // Validate identity token
-    URL url = new URL("http://localhost:" + getAuthoHttpPort() + "/ws/v1/authorize");
+    URL authzUrl = new URL(authzServerUrl + PATH_V1 + DO_GET_ACCESS_TOKEN_URL);
     String tokenEncode = URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
     String protocolEncode = URLEncoder.encode(userName, "UTF-8");
-    String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "="
+    String authzContent = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "="
         + protocolEncode;
-    String authorizationResult = doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED,
+    String authzResult = doHttpConnect(authzUrl, authzContent, "POST", MediaType.APPLICATION_FORM_URLENCODED,
         MediaType.APPLICATION_JSON);
-    AccessToken accessToken=(AccessToken) TokenFactory.get().createAccessToken(JsonHelper.toAccessTokenBytes(authorizationResult));
-    assertEquals(userName,accessToken.getUser());
+    AccessToken accessToken = (AccessToken) TokenFactory.get().createAccessToken(
+        JsonHelper.toAccessTokenBytes(authzResult));
+    assertEquals(userName, accessToken.getUser());
 
     // Revoke the identity token
-    url = new URL("http://localhost:" + identityHttpPort + "/ws/v1/cancelToken");
+    URL cancelTokenUrl = new URL(identityServerUrl + PATH_V1 + CANCEL_TOKEN_URL);
     tokenEncode = URLEncoder.encode(
         TokenUtils.encodeToken(TokenUtils.getBytesOfToken(token)),
         "UTF-8");
     String tokenIdEncode =
         URLEncoder.encode(token.getId() + "", "UTF-8");
-    content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + 
+    String cancelTokenContent = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + 
         RESTParams.TOKEN_ID + "=" + tokenIdEncode;
-
-    String result = doHttpConnect(url, content, "POST", 
+    String result = doHttpConnect(cancelTokenUrl, cancelTokenContent, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     System.out.println(result);
 
     // Try to get an access token with revoked identity token
-    url = new URL("http://localhost:" + getAuthoHttpPort() + "/ws/v1/authorize");
-    tokenEncode = URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
-    content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "="
-        + protocolEncode;
-    doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED,
+    doHttpConnect(authzUrl, authzContent, "POST", MediaType.APPLICATION_FORM_URLENCODED,
         MediaType.APPLICATION_JSON, HttpURLConnection.HTTP_FORBIDDEN);
   }
 

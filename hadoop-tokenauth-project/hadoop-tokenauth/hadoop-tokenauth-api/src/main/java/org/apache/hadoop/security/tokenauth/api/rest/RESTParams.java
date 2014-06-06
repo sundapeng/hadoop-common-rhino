@@ -24,8 +24,10 @@ public class RESTParams {
   public static final String PROTOCOL = "protocol";
   
   public static final String PATH_V1 = "/ws/v1";
+  public static final String HELLO_PATH_SPEC = "/hello";
   public static final String AUTHENTICATE_SERVLET_PATH_SPEC = "/authenticate";
   public static final String AUTHORIZE_SERVLET_PATH_SPEC = "/authorize";
+  public static final String GET_SECRETS_PATH_SPEC = "/getSecrets";
   public static final String RENEW_TOKEN_PATH_SPEC = "/renewToken";
   public static final String CANCEL_TOKEN_PATH_SPEC = "/cancelToken";
 }
