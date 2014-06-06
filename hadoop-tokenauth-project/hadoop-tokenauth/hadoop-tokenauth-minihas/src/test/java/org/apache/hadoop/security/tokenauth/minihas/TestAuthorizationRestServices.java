@@ -17,10 +17,6 @@
  */
 package org.apache.hadoop.security.tokenauth.minihas;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
@@ -28,10 +24,10 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
+import org.apache.hadoop.security.tokenauth.api.rest.RestUtil;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
@@ -47,36 +43,10 @@ public class TestAuthorizationRestServices extends MiniHasTestCase {
   
   @Test
   public void testHello() throws Exception {
-    HttpURLConnection conn = null;
-    InputStream in = null;
-    try {
-      URL url = new URL(authzServerUrl + PATH_V1 + HELLO_URL);
-      conn = (HttpURLConnection)url.openConnection();
-      conn.setDoOutput(true);
-      conn.setRequestMethod("GET");
-      conn.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
-      conn.setRequestProperty("charset", "utf-8");
-      
-      System.out.println(conn.getResponseCode());
-      System.out.println(conn.getResponseMessage());
-      System.out.println(conn.getHeaderField("Content-Length"));
-      
-      in = conn.getInputStream();
-      
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      byte[] b = new byte[1024];
-      int nRead = 0;
-      while((nRead = in.read(b)) != -1) {
-        buffer.write(b, 0, nRead);
-      }
-      
-      System.out.println(buffer.toString("utf-8"));
-    } finally {
-      IOUtils.closeStream(in);
-      if (conn != null) {
-        conn.disconnect();
-      }
-    }
+    URL url = new URL(authzServerUrl + PATH_V1 + HELLO_URL);
+    String result = RestUtil.doHttpConnect(url, null, "GET", 
+        null, MediaType.APPLICATION_JSON);
+    System.out.println(result);
   }
   
   @Test
@@ -98,50 +68,16 @@ public class TestAuthorizationRestServices extends MiniHasTestCase {
     System.out.println(response.getResultCode());
     System.out.println(response.getIdentityToken().length);
     
-    HttpURLConnection conn = null;
-    OutputStream out = null;
-    InputStream in = null;
-    try {
-      String tokenEncode =
-          URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
-      String protocolEncode = URLEncoder.encode(userName, "UTF-8");
-      String contentString =
-          RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "=" + protocolEncode;
-      byte[] content = contentString.getBytes("UTF-8");
-      URL url = new URL(authzServerUrl + PATH_V1 + DO_GET_ACCESS_TOKEN_URL);
-      conn = (HttpURLConnection)url.openConnection();
-      conn.setDoOutput(true);
-      conn.setRequestMethod("POST");
-      conn.setRequestProperty("Content-Type", MediaType.APPLICATION_FORM_URLENCODED);
-      conn.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
-      conn.setRequestProperty("charset", "utf-8");
-      conn.setRequestProperty("Content-Length", "" + String.valueOf(content.length));
+    String tokenEncode =
+        URLEncoder.encode(TokenUtils.encodeToken(response.getIdentityToken()), "UTF-8");
+    String protocolEncode = URLEncoder.encode(userName, "UTF-8");
+    String content =
+        RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "=" + protocolEncode;
+    URL url = new URL(authzServerUrl + PATH_V1 + DO_GET_ACCESS_TOKEN_URL);
+    
+    String result = RestUtil.doHttpConnect(url, content, "POST", 
+        MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
+    System.out.println(result);
       
-      out = conn.getOutputStream();
-      out.write(content);
-      out.flush();
-      out.close();
-      
-      System.out.println(conn.getResponseCode());
-      System.out.println(conn.getResponseMessage());
-      
-      in = conn.getInputStream();
-      
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      byte[] b = new byte[1024];
-      int nRead = 0;
-      while((nRead = in.read(b)) != -1) {
-        buffer.write(b, 0, nRead);
-      }
-      
-      System.out.println(buffer.toString("utf-8"));
-      
-    } finally {
-      IOUtils.closeStream(in);
-      if (conn != null) {
-        conn.disconnect();
-      }
-    }
   }
-  
 }

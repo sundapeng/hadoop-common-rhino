@@ -18,8 +18,6 @@
 package org.apache.hadoop.security.tokenauth.minihas;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -30,11 +28,11 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
+import org.apache.hadoop.security.tokenauth.api.rest.RestUtil;
 import org.apache.hadoop.security.tokenauth.has.HASClient;
 import org.apache.hadoop.security.tokenauth.has.HASClientImpl;
 import org.apache.hadoop.security.tokenauth.has.HASConfiguration;
@@ -75,7 +73,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
   @Test
   public void testHello() throws Exception {
     URL url = new URL(identityServerUrl + PATH_V1 + HELLO_URL);
-    String result = doHttpConnect(url, null, "GET", 
+    String result = RestUtil.doHttpConnect(url, null, "GET", 
         null, MediaType.APPLICATION_JSON);
     System.out.println(result);
   }
@@ -86,7 +84,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
       IdentityRequest request = new IdentityRequest("12345678", null);
       String content = JsonHelper.toJsonString(request);
       URL url = new URL(identityServerUrl + PATH_V1 + AUTHENTICATE_URL);
-      String result = doHttpConnect(url, content, "POST", 
+      String result = RestUtil.doHttpConnect(url, content, "POST", 
           MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON);
       System.out.println(result);
       IdentityResponse response =
@@ -125,7 +123,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     String content = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&"
         + RESTParams.PROTOCOL + "=" + protocolEncode;
     URL url = new URL(identityServerUrl + PATH_V1 + GET_SECRETS_URL);
-    String result = doHttpConnect(url, content, "POST", 
+    String result = RestUtil.doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     System.out.println(result);
   }
@@ -155,7 +153,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     // 1st renewal, expected to be success.
     URL url = new URL(identityServerUrl + PATH_V1 + RENEW_TOKEN_URL);
     String content = getRenewTokenContent(token);
-    String result = doHttpConnect(url, content, "POST", 
+    String result = RestUtil.doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     System.out.println(result);
     
@@ -169,7 +167,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
 
     // 2nd renewal, expected to received a response with status code 403.
     content = getRenewTokenContent(newToken);
-    doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED,
+    RestUtil.doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED,
         MediaType.APPLICATION_JSON, HttpURLConnection.HTTP_FORBIDDEN);
   }
 
@@ -198,7 +196,7 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     String protocolEncode = URLEncoder.encode(userName, "UTF-8");
     String authzContent = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "="
         + protocolEncode;
-    String authzResult = doHttpConnect(authzUrl, authzContent, "POST", MediaType.APPLICATION_FORM_URLENCODED,
+    String authzResult = RestUtil.doHttpConnect(authzUrl, authzContent, "POST", MediaType.APPLICATION_FORM_URLENCODED,
         MediaType.APPLICATION_JSON);
     AccessToken accessToken = (AccessToken) TokenFactory.get().createAccessToken(
         JsonHelper.toAccessTokenBytes(authzResult));
@@ -213,60 +211,13 @@ public class TestIdentityRestServices extends MiniHasTestCase {
         URLEncoder.encode(token.getId() + "", "UTF-8");
     String cancelTokenContent = RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + 
         RESTParams.TOKEN_ID + "=" + tokenIdEncode;
-    String result = doHttpConnect(cancelTokenUrl, cancelTokenContent, "POST", 
+    String result = RestUtil.doHttpConnect(cancelTokenUrl, cancelTokenContent, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     System.out.println(result);
 
     // Try to get an access token with revoked identity token
-    doHttpConnect(authzUrl, authzContent, "POST", MediaType.APPLICATION_FORM_URLENCODED,
+    RestUtil.doHttpConnect(authzUrl, authzContent, "POST", MediaType.APPLICATION_FORM_URLENCODED,
         MediaType.APPLICATION_JSON, HttpURLConnection.HTTP_FORBIDDEN);
-  }
-
-  private String doHttpConnect(URL url, String content, String requestMethod,
-      String contentType, String acceptType) throws IOException {
-    return doHttpConnect(url, content, requestMethod, contentType, acceptType,
-        HttpURLConnection.HTTP_OK);
-  }
-
-  private String doHttpConnect(URL url, String content, String requestMethod,
-      String contentType, String acceptType, int expectedStatus) throws IOException {
-    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-    conn.setDoOutput(true);
-    conn.setRequestMethod(requestMethod);
-    conn.setRequestProperty("Accept", acceptType);
-    conn.setRequestProperty("charset", "utf-8");
-    if (content != null) {
-      conn.setRequestProperty("Content-Type", contentType);
-      conn.setRequestProperty("Content-Length",
-          "" + String.valueOf(content.getBytes().length));
-    }
-
-    return content != null ? sendRequest(conn, content.getBytes(), expectedStatus) :
-      sendRequest(conn, null, expectedStatus);
-  }
-
-  private String sendRequest(HttpURLConnection conn, byte[] content,
-      int expectedStatus) throws IOException {
-    if (content != null) {
-      OutputStream out = conn.getOutputStream();
-      out.write(content);
-      out.flush();
-      out.close();
-    }
-
-    int httpStatus = conn.getResponseCode();
-    assertEquals(expectedStatus, conn.getResponseCode());
-    InputStream in;
-    if(HttpURLConnection.HTTP_OK == httpStatus){
-      in = conn.getInputStream();
-    }
-    else{
-      in = conn.getErrorStream();
-    }
-    String result = IOUtils.toString(in);
-    if (in != null)
-      in.close();
-    return result;
   }
 
   private String getRenewTokenContent(IdentityToken token)
@@ -277,4 +228,5 @@ public class TestIdentityRestServices extends MiniHasTestCase {
     return RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&"
         + RESTParams.TOKEN_ID + "=" + tokenIdEncode;
   }
+
 }

@@ -33,7 +33,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
-import org.apache.hadoop.security.tokenauth.has.RestUtil;
+import org.apache.hadoop.security.tokenauth.api.rest.RestUtil;
 import org.apache.hadoop.security.tokenauth.has.authorization.AuthorizationService;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 

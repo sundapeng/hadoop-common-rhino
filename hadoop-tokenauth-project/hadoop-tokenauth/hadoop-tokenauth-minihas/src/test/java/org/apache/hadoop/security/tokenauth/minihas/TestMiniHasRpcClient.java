@@ -35,16 +35,14 @@ import org.junit.Test;
 public class TestMiniHasRpcClient extends MiniHasTestCase {
   private String userName = getUserName();
   private String adminName = getAdminName();
-  private String identityRpcPort = getIdentityRpcPort();
-  private String authoRpcPort = getAuthoRpcPort();
+  private String identityServerUrl = "http://localhost:" + getIdentityRpcPort();
+  private String authzServerUrl = "http://localhost:" + getAuthzRpcPort();
   
   @Test
   public void tesIdentityToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", 
-        "http://localhost:" + identityRpcPort);
-    conf.set("hadoop.security.authorization.server.rpc-address", 
-        "http://localhost:" + authoRpcPort);
+    conf.set("hadoop.security.identity.server.rpc-address", identityServerUrl);
+    conf.set("hadoop.security.authorization.server.rpc-address", authzServerUrl);
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
     IdentityResponse response = client.authenticate(request);
@@ -67,10 +65,8 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
   @Test
   public void testAccessToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", 
-        "http://localhost:" + identityRpcPort);
-    conf.set("hadoop.security.authorization.server.rpc-address", 
-        "http://localhost:" + authoRpcPort);
+    conf.set("hadoop.security.identity.server.rpc-address", identityServerUrl);
+    conf.set("hadoop.security.authorization.server.rpc-address", authzServerUrl);
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
     IdentityResponse response = client.authenticate(request);
@@ -97,8 +93,7 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
   @Test
   public void tesRenewToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", 
-        "http://localhost:" + identityRpcPort);
+    conf.set("hadoop.security.identity.server.rpc-address", identityServerUrl);
     conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, "root");
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);
@@ -128,8 +123,7 @@ public class TestMiniHasRpcClient extends MiniHasTestCase {
   @Test
   public void tesCancelToken() throws Exception {
     Configuration conf = new Configuration();
-    conf.set("hadoop.security.identity.server.rpc-address", 
-        "http://localhost:" + identityRpcPort);
+    conf.set("hadoop.security.identity.server.rpc-address", identityServerUrl);
     conf.set(HASConfiguration.HADOOP_SECURITY_TOKENAUTH_IDENTITY_SERVER_ADMIN_KEY, "root");
     HASClient client = new HASRpcClient(conf);
     IdentityRequest request = new IdentityRequest(null,null);

@@ -96,10 +96,6 @@ public class MiniHasTestCase {
     return identityRpcPort;
   }
 
-  public String getAuthoRpcPort() {
-    return authzRpcPort;
-  }
-
   public String getAuthzRpcPort() {
     return authzRpcPort;
   }

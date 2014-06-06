@@ -18,9 +18,6 @@
 package org.apache.hadoop.security.tokenauth.has;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.InvalidKeyException;
@@ -30,11 +27,11 @@ import org.apache.hadoop.security.tokenauth.api.IdentityRequest;
 import org.apache.hadoop.security.tokenauth.api.IdentityResponse;
 import org.apache.hadoop.security.tokenauth.api.rest.JsonHelper;
 import org.apache.hadoop.security.tokenauth.api.rest.RESTParams;
+import org.apache.hadoop.security.tokenauth.api.rest.RestUtil;
 import org.apache.hadoop.security.tokenauth.token.Token;
 import org.apache.hadoop.security.tokenauth.token.TokenFactory;
 import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 
-import org.apache.commons.io.IOUtils;
 import org.json.simple.parser.ParseException;
 
 /**
@@ -64,7 +61,7 @@ public class HASClientImpl extends HASClient {
       String urlString = identityServerUrl + PATH_V1 + AUTHENTICATE_URL;
       URL url = new URL(urlString);
       
-      String result = doHttpConnect(url, content, "POST", 
+      String result = RestUtil.doHttpConnect(url, content, "POST", 
           MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON);
       IdentityResponse response =
           JsonHelper.toIdentityResponse(result);
@@ -87,7 +84,7 @@ public class HASClientImpl extends HASClient {
     String content =
         RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.PROTOCOL + "=" + protocolEncode;
     
-    String result = doHttpConnect(url, content, "POST", 
+    String result = RestUtil.doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
     return JsonHelper.toAccessTokenBytes(result);
   }
@@ -104,7 +101,7 @@ public class HASClientImpl extends HASClient {
     String content =
         RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.TOKEN_ID + "=" + tokenIdEncode;
 
-    String result = doHttpConnect(url, content, "POST", 
+    String result = RestUtil.doHttpConnect(url, content, "POST", 
         MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
 
     return TokenFactory.get().createIdentityToken(
@@ -123,46 +120,8 @@ public class HASClientImpl extends HASClient {
     String content =
         RESTParams.IDENTITY_TOKEN + "=" + tokenEncode + "&" + RESTParams.TOKEN_ID + "=" + tokenIdEncode;
 
-    doHttpConnect(url, content, "POST", MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
+    RestUtil.doHttpConnect(url, content, "POST", 
+        MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON);
   }
   
-  private String doHttpConnect(URL url, String content, String requestMethod,
-      String contentType, String acceptType) throws IOException {
-    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-    conn.setDoOutput(true);
-    conn.setRequestMethod(requestMethod);
-    conn.setRequestProperty("Accept", acceptType);
-    conn.setRequestProperty("charset", "utf-8");
-
-    if (content != null) {
-      conn.setRequestProperty("Content-Type", contentType);
-      conn.setRequestProperty("Content-Length",
-          "" + String.valueOf(content.getBytes().length));
-    }
-
-    return content != null ? sendRequest(conn, content.getBytes()) :
-      sendRequest(conn, null);
-  }
-
-  private String sendRequest(HttpURLConnection conn, byte[] content) throws
-      IOException {
-    if (content != null) {
-      OutputStream out = conn.getOutputStream();
-      out.write(content);
-      out.flush();
-      out.close();
-    }
-    InputStream in = conn.getInputStream();
-
-    int httpStatus = conn.getResponseCode();
-    if (httpStatus != 200) {
-      throw new IOException("Server at " + conn
-          .getURL() + " returned non ok status:" + httpStatus + ", message:" + conn
-          .getResponseMessage());
-    }
-    String result = IOUtils.toString(in);
-    if (in != null) in.close();
-    return result;
-  }
-
 }
