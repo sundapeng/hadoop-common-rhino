@@ -1661,13 +1661,27 @@ public class DFSUtil {
       Configuration conf, final InetSocketAddress httpAddr,
       final InetSocketAddress httpsAddr, String name, String spnegoUserNameKey,
       String spnegoKeytabFileKey) throws IOException {
+    return httpServerTemplateForNNAndJN(conf, httpAddr, httpsAddr, name, spnegoUserNameKey,
+        spnegoKeytabFileKey, null, null);
+     }
+
+  public static HttpServer2.Builder httpServerTemplateForNNAndJN(Configuration conf,
+      final InetSocketAddress httpAddr, final InetSocketAddress httpsAddr, String name,
+      String spnegoUserNameKey, String spnegoKeytabFileKey, String identityServerAddressKey,
+      String authorizationServerAddressKey) throws IOException {
     HttpConfig.Policy policy = getHttpPolicy(conf);
 
+    // If TokenAuth is not enabled, setTokenAuthUsernameConfKey, setAuthnFileConfKey,
+    // setIdentityServerAddressKey and setAuthorizationServerAddressKey will be ignored.
     HttpServer2.Builder builder = new HttpServer2.Builder().setName(name)
         .setConf(conf).setACL(new AccessControlList(conf.get(DFS_ADMIN, " ")))
         .setSecurityEnabled(UserGroupInformation.isSecurityEnabled())
         .setUsernameConfKey(spnegoUserNameKey)
-        .setKeytabConfKey(getSpnegoKeytabKey(conf, spnegoKeytabFileKey));
+        .setKeytabConfKey(getSpnegoKeytabKey(conf, spnegoKeytabFileKey))
+        .setTokenAuthUsernameConfKey(spnegoUserNameKey)
+        .setAuthnFileConfKey(spnegoKeytabFileKey)
+        .setIdentityServerAddressKey(identityServerAddressKey)
+        .setAuthorizationServerAddressKey(authorizationServerAddressKey);
 
     // initialize the webserver for uploading/downloading files.
     LOG.info("Starting web server as: "

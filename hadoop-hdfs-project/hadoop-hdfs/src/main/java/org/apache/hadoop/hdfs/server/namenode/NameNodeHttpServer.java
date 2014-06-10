@@ -18,6 +18,9 @@
 package org.apache.hadoop.hdfs.server.namenode;
 
 
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_INTERNAL_WEB_PRINCIPAL;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -27,6 +30,7 @@ import javax.servlet.ServletContext;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.DFSUtil;
 import org.apache.hadoop.hdfs.server.common.JspHelper;
@@ -59,11 +63,27 @@ public class NameNodeHttpServer {
   protected static final String NAMENODE_ATTRIBUTE_KEY = "name.node";
   public static final String STARTUP_PROGRESS_ATTRIBUTE_KEY = "startup.progress";
 
+  private final String usernameConfKey;
+  private final String authFileConfKey;
+  private final String identityServerAddressKey;
+  private final String authorizationServerAddressKey;
+
   NameNodeHttpServer(Configuration conf, NameNode nn,
       InetSocketAddress bindAddress) {
     this.conf = conf;
     this.nn = nn;
     this.bindAddress = bindAddress;
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      usernameConfKey = DFSUtil.getTokenAuthWebPrincipalKey(conf,
+          DFSConfigKeys.DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY);
+      authFileConfKey = DFSUtil.getTokenAuthWebKeytabKey(conf,
+          DFSConfigKeys.DFS_NAMENODE_AUTHENTICATION_FILE_KEY);
+    } else {
+      usernameConfKey = DFSConfigKeys.DFS_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY;
+      authFileConfKey = DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY;
+    }
+    identityServerAddressKey=DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY;
+    authorizationServerAddressKey=DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY;
   }
 
   private void initWebHdfs(Configuration conf) throws IOException {
@@ -118,18 +138,9 @@ public class NameNodeHttpServer {
       }
     }
 
-    HttpServer2.Builder builder = DFSUtil.httpServerTemplateForNNAndJN(conf,
-        httpAddr, httpsAddr, "hdfs",
-        DFSConfigKeys.DFS_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
-        DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY);
-    builder.setTokenAuthUsernameConfKey(
-            DFSUtil.getTokenAuthWebPrincipalKey(conf,
-                DFSConfigKeys.DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY))
-        .setIdentityServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)
-        .setAuthorizationServerAddressKey(
-            DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY)
-        .setAuthnFileConfKey(DFSConfigKeys.DFS_NAMENODE_AUTHENTICATION_FILE_KEY);
-
+    HttpServer2.Builder builder = DFSUtil.httpServerTemplateForNNAndJN(conf, httpAddr, httpsAddr,
+        "hdfs", usernameConfKey, authFileConfKey, identityServerAddressKey,
+        authorizationServerAddressKey);
     httpServer = builder.build();
 
     if (policy.isHttpsEnabled()) {

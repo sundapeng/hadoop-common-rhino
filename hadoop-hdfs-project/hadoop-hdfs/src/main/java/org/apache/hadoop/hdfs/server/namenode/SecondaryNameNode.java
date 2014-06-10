@@ -17,6 +17,8 @@
  */
 package org.apache.hadoop.hdfs.server.namenode;
 
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_INTERNAL_WEB_PRINCIPAL;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_SECONDARY_NAMENODE_TOKENAUTH_PRINCIPAL_KEY;
 import static org.apache.hadoop.util.ExitUtil.terminate;
@@ -32,6 +34,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.*;
 
 import com.google.common.collect.Lists;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -45,6 +48,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.HadoopIllegalArgumentException;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.DFSUtil;
@@ -82,6 +86,7 @@ import org.apache.hadoop.util.Time;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+
 import org.apache.hadoop.util.VersionInfo;
 
 import javax.management.ObjectName;
@@ -130,6 +135,11 @@ public class SecondaryNameNode implements Runnable,
   private Thread checkpointThread;
   private ObjectName nameNodeStatusBeanName;
   private String legacyOivImageDir;
+
+  private final String usernameConfKey;
+  private final String authFileConfKey;
+  private final String identityServerAddressKey;
+  private final String authorizationServerAddressKey;
 
   @Override
   public String toString() {
@@ -184,6 +194,18 @@ public class SecondaryNameNode implements Runnable,
   
   public SecondaryNameNode(Configuration conf,
       CommandLineOpts commandLineOpts) throws IOException {
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      usernameConfKey = DFSUtil.getTokenAuthWebPrincipalKey(conf,
+          DFSConfigKeys.DFS_SECONDARY_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY);
+      authFileConfKey = DFSUtil.getTokenAuthWebKeytabKey(conf,
+          DFSConfigKeys.DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY);
+    } else {
+      usernameConfKey = DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY;
+      authFileConfKey = DFSConfigKeys.DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY;
+    }
+    identityServerAddressKey=DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY;
+    authorizationServerAddressKey=DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY;
+
     try {
       String nsId = DFSUtil.getSecondaryNameServiceId(conf);
       if (HAUtil.isHAEnabled(conf, nsId)) {
@@ -267,17 +289,10 @@ public class SecondaryNameNode implements Runnable,
         DFSConfigKeys.DFS_NAMENODE_SECONDARY_HTTPS_ADDRESS_DEFAULT);
     InetSocketAddress httpsAddr = NetUtils.createSocketAddr(httpsAddrString);
 
-    HttpServer2.Builder builder = DFSUtil.httpServerTemplateForNNAndJN(conf,
-        httpAddr, httpsAddr, "secondary",
-        DFSConfigKeys.DFS_SECONDARY_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
-        DFSConfigKeys.DFS_SECONDARY_NAMENODE_KEYTAB_FILE_KEY);
-    builder.setTokenAuthUsernameConfKey(DFSUtil.getTokenAuthWebPrincipalKey(conf,
-        DFSConfigKeys.DFS_SECONDARY_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY))
-    .setAuthnFileConfKey(DFSUtil.getTokenAuthWebKeytabKey(conf,
-        DFSConfigKeys.DFS_SECONDARY_NAMENODE_AUTHENTICATION_FILE_KEY))
-    .setIdentityServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)
-    .setAuthorizationServerAddressKey(DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY);
-    
+    HttpServer2.Builder builder = DFSUtil.httpServerTemplateForNNAndJN(conf, httpAddr, httpsAddr,
+        "secondary", usernameConfKey, authFileConfKey, identityServerAddressKey,
+        authorizationServerAddressKey);
+
     nameNodeStatusBeanName = MBeans.register("SecondaryNameNode",
             "SecondaryNameNodeInfo", this);
 
