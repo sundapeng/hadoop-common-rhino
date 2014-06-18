@@ -61,7 +61,6 @@ public class KerberosLoginModule extends LoginModule {
 
   private static KerberosAuthenticator rpcAuthenticator;
   private static KerberosAuthenticator httpAuthenticator;
-  private static LdapConnector ldapConnector;
 
   @Override
   protected void init(Subject subject, Map<String, ?> sharedState,
@@ -93,15 +92,6 @@ public class KerberosLoginModule extends LoginModule {
         }
       }
     }
-    
-    if (ldapConnector == null) {
-      synchronized (LdapLoginModule.class) {
-        if (ldapConnector == null) {
-          ldapConnector = new LdapConnector();
-          ldapConnector.setConf(getConf());
-        }
-      }
-    }
   }
 
   @Override
@@ -111,7 +101,6 @@ public class KerberosLoginModule extends LoginModule {
       
       List<String> groups = new ArrayList<String>();
       List<Attribute> attributes = getAttributes();
-      ldapConnector.query(principal.getName(), groups, attributes);
       if (groups != null) {
         Attribute groupsAttr = new Attribute(Attribute.GROUPS);
         groupsAttr.getValues().addAll(groups);
@@ -136,10 +125,11 @@ public class KerberosLoginModule extends LoginModule {
     }
     
     if (kerberosCallback == null) {
-      return LOGIN_STATUS.LOGIN_NOTCOMPLETE;
-    } else if (kerberosCallback.getTicket() == null) {
-      LOG.error("Login failed",new LoginException("Service ticket is null"));
+      LOG.error("Login failed",new LoginException("kerberosCallback is null"));
       return LOGIN_STATUS.LOGIN_FAIL;
+    } else if (kerberosCallback.getTicket() == null) {
+      LOG.warn("Login failed",new LoginException("service ticket is null"));
+      return LOGIN_STATUS.LOGIN_NOTCOMPLETE;
     }
 
     try {
