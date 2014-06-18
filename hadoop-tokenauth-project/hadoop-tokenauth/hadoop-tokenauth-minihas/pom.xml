@@ -60,7 +60,6 @@
       <groupId>org.mortbay.jetty</groupId>
       <artifactId>jsp-2.1</artifactId>
       <scope>provided</scope>
-    <version>7.0.0pre2</version>
     </dependency>
   </dependencies>
 
