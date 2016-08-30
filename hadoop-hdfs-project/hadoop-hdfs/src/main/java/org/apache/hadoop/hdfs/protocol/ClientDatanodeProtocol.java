@@ -28,6 +28,7 @@ import org.apache.hadoop.hdfs.security.token.block.BlockTokenSelector;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 /** An client-datanode protocol for block recovery
  */
@@ -35,6 +36,8 @@ import org.apache.hadoop.security.token.TokenInfo;
 @InterfaceStability.Evolving
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_DATANODE_KERBEROS_PRINCIPAL_KEY)
+@TokenAuthInfo(
+    serverPrincipal = DFSConfigKeys.DFS_DATANODE_TOKENAUTH_PRINCIPAL_KEY)
 @TokenInfo(BlockTokenSelector.class)
 public interface ClientDatanodeProtocol {
   /**

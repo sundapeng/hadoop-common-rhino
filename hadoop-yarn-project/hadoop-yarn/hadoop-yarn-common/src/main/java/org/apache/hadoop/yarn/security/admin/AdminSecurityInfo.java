@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.security.SecurityInfo;
 import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.server.api.ResourceManagerAdministrationProtocolPB;
 
@@ -39,6 +40,30 @@ public class AdminSecurityInfo extends SecurityInfo {
       return null;
     }
     return new KerberosInfo() {
+
+      @Override
+      public Class<? extends Annotation> annotationType() {
+        return null;
+      }
+
+      @Override
+      public String serverPrincipal() {
+        return YarnConfiguration.RM_PRINCIPAL;
+      }
+
+      @Override
+      public String clientPrincipal() {
+        return null;
+      }
+    };
+  }
+  
+  @Override
+  public TokenAuthInfo getTokenAuthInfo(Class<?> protocol, Configuration conf) {
+    if (!protocol.equals(ResourceManagerAdministrationProtocolPB.class)) {
+      return null;
+    }
+    return new TokenAuthInfo() {
 
       @Override
       public Class<? extends Annotation> annotationType() {

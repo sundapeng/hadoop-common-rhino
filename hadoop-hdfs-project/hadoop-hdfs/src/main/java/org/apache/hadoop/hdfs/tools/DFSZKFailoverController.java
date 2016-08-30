@@ -19,6 +19,8 @@ package org.apache.hadoop.hdfs.tools;
 
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_AUTHENTICATION_FILE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -41,6 +43,7 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.security.authorize.AccessControlList;
 import org.apache.hadoop.security.authorize.PolicyProvider;
 import org.apache.hadoop.util.GenericOptionsParser;
@@ -151,8 +154,13 @@ public class DFSZKFailoverController extends ZKFailoverController {
   @Override
   public void loginAsFCUser() throws IOException {
     InetSocketAddress socAddr = NameNode.getAddress(conf);
-    SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      SecurityUtil.tokenAuthLogin(conf, DFS_NAMENODE_AUTHENTICATION_FILE_KEY, 
+          DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY, socAddr.getHostName());
+    } else {
+      SecurityUtil.login(conf, DFS_NAMENODE_KEYTAB_FILE_KEY,
         DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY, socAddr.getHostName());
+    }
   }
   
   @Override

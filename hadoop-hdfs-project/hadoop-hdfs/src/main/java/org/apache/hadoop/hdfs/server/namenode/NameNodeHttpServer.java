@@ -18,6 +18,9 @@
 package org.apache.hadoop.hdfs.server.namenode;
 
 
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_INTERNAL_WEB_PRINCIPAL;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -27,6 +30,7 @@ import javax.servlet.ServletContext;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.DFSUtil;
 import org.apache.hadoop.hdfs.server.common.JspHelper;
@@ -59,11 +63,27 @@ public class NameNodeHttpServer {
   protected static final String NAMENODE_ATTRIBUTE_KEY = "name.node";
   public static final String STARTUP_PROGRESS_ATTRIBUTE_KEY = "startup.progress";
 
+  private final String usernameConfKey;
+  private final String authFileConfKey;
+  private final String identityServerAddressKey;
+  private final String authorizationServerAddressKey;
+
   NameNodeHttpServer(Configuration conf, NameNode nn,
       InetSocketAddress bindAddress) {
     this.conf = conf;
     this.nn = nn;
     this.bindAddress = bindAddress;
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      usernameConfKey = DFSUtil.getTokenAuthWebPrincipalKey(conf,
+          DFSConfigKeys.DFS_NAMENODE_INTERNAL_TOKENAUTH_WEB_PRINCIPAL_KEY);
+      authFileConfKey = DFSUtil.getTokenAuthWebKeytabKey(conf,
+          DFSConfigKeys.DFS_NAMENODE_AUTHENTICATION_FILE_KEY);
+    } else {
+      usernameConfKey = DFSConfigKeys.DFS_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY;
+      authFileConfKey = DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY;
+    }
+    identityServerAddressKey=DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY;
+    authorizationServerAddressKey=DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY;
   }
 
   private void initWebHdfs(Configuration conf) throws IOException {
@@ -118,11 +138,9 @@ public class NameNodeHttpServer {
       }
     }
 
-    HttpServer2.Builder builder = DFSUtil.httpServerTemplateForNNAndJN(conf,
-        httpAddr, httpsAddr, "hdfs",
-        DFSConfigKeys.DFS_NAMENODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
-        DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY);
-
+    HttpServer2.Builder builder = DFSUtil.httpServerTemplateForNNAndJN(conf, httpAddr, httpsAddr,
+        "hdfs", usernameConfKey, authFileConfKey, identityServerAddressKey,
+        authorizationServerAddressKey);
     httpServer = builder.build();
 
     if (policy.isHttpsEnabled()) {
@@ -158,31 +176,71 @@ public class NameNodeHttpServer {
   private Map<String, String> getAuthFilterParams(Configuration conf)
       throws IOException {
     Map<String, String> params = new HashMap<String, String>();
-    String principalInConf = conf
-        .get(DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL_KEY);
-    if (principalInConf != null && !principalInConf.isEmpty()) {
-      params
-          .put(
-              DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL_KEY,
-              SecurityUtil.getServerPrincipal(principalInConf,
-                                              bindAddress.getHostName()));
-    } else if (UserGroupInformation.isSecurityEnabled()) {
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      String principalInConf = conf.get(DFSUtil.getTokenAuthWebPrincipalKey(conf,
+          DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_PRINCIPAL_KEY));
+      if (principalInConf != null && !principalInConf.isEmpty()) {
+        params
+            .put(
+                DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_PRINCIPAL_KEY,
+                SecurityUtil.getServerPrincipal(principalInConf, 
+                    bindAddress.getHostName()));
+      } else if (UserGroupInformation.isSecurityEnabled()) {
+        HttpServer2.LOG.error(
+            "WebHDFS and security are enabled, but configuration property '" +
+            DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_PRINCIPAL_KEY +
+            "' is not set.");
+      }
+      
+      String httpAuthnFile = conf.get(DFSUtil.getTokenAuthWebKeytabKey(conf,
+          DFSConfigKeys.DFS_NAMENODE_AUTHENTICATION_FILE_KEY));
+      if (httpAuthnFile != null && !httpAuthnFile.isEmpty()) {
+        params.put(
+            DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_AUTHNFILE_KEY,
+            httpAuthnFile);
+      } else if (UserGroupInformation.isSecurityEnabled()) {
+        HttpServer2.LOG.error(
+            "WebHDFS and security are enabled, but configuration property '" +
+            DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_AUTHNFILE_KEY +
+            "' is not set.");
+      }
+
+      String identityServerAddress=conf.get(DFSConfigKeys.DFS_WEB_AUTHENTICATION_IDENTITY_SERVER_HTTP_ADDRESS_KEY);
+      if(identityServerAddress!=null && !identityServerAddress.isEmpty()){
+        params.put(DFSConfigKeys.DFS_WEB_AUTHENTICATION_IDENTITY_SERVER_HTTP_ADDRESS_KEY, identityServerAddress);
+      }
+
+      String authorizationServerAddress=conf.get(DFSConfigKeys.DFS_WEB_AUTHENTICATION_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY);
+      if(authorizationServerAddress!=null&&!authorizationServerAddress.isEmpty()){
+        params.put(DFSConfigKeys.DFS_WEB_AUTHENTICATION_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY, authorizationServerAddress);      }
+    } else {
+      String principalInConf = conf
+          .get(DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL_KEY);
+      if (principalInConf != null && !principalInConf.isEmpty()) {
+        params
+            .put(
+                DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL_KEY,
+                SecurityUtil.getServerPrincipal(principalInConf,
+                                                bindAddress.getHostName()));
+      } else if (UserGroupInformation.isSecurityEnabled()) {
       HttpServer2.LOG.error(
-          "WebHDFS and security are enabled, but configuration property '" +
-          DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL_KEY +
-          "' is not set.");
-    }
-    String httpKeytab = conf.get(DFSUtil.getSpnegoKeytabKey(conf,
-        DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY));
-    if (httpKeytab != null && !httpKeytab.isEmpty()) {
-      params.put(
-          DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_KEYTAB_KEY,
-          httpKeytab);
-    } else if (UserGroupInformation.isSecurityEnabled()) {
+            "WebHDFS and security are enabled, but configuration property '" +
+            DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_PRINCIPAL_KEY +
+            "' is not set.");
+      }
+      
+      String httpKeytab = conf.get(DFSUtil.getSpnegoKeytabKey(conf,
+          DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY));
+      if (httpKeytab != null && !httpKeytab.isEmpty()) {
+        params.put(
+            DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_KEYTAB_KEY,
+            httpKeytab);
+      } else if (UserGroupInformation.isSecurityEnabled()) {
       HttpServer2.LOG.error(
-          "WebHDFS and security are enabled, but configuration property '" +
-          DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_KEYTAB_KEY +
-          "' is not set.");
+            "WebHDFS and security are enabled, but configuration property '" +
+            DFSConfigKeys.DFS_WEB_AUTHENTICATION_KERBEROS_KEYTAB_KEY +
+            "' is not set.");
+      }
     }
     String anonymousAllowed = conf
       .get(DFSConfigKeys.DFS_WEB_AUTHENTICATION_SIMPLE_ANONYMOUS_ALLOWED);

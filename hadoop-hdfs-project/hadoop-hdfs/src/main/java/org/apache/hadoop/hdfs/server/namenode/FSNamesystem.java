@@ -6333,8 +6333,15 @@ public class FSNamesystem implements Namesystem, FSClusterStats,
       if (ugi.getRealUser() != null) {
         realUser = new Text(ugi.getRealUser().getUserName());
       }
-      DelegationTokenIdentifier dtId = new DelegationTokenIdentifier(owner,
-        renewer, realUser);
+      DelegationTokenIdentifier dtId;
+      if (UserGroupInformation.isTokenAuthEnabled()) {
+        dtId = new DelegationTokenIdentifier(owner,
+            renewer, realUser, ugi.getToken()); 
+      } else {
+        dtId = new DelegationTokenIdentifier(
+            owner, renewer, realUser);
+      }
+       
       token = new Token<DelegationTokenIdentifier>(
         dtId, dtSecretManager);
       long expiryTime = dtSecretManager.getTokenExpiryTime(dtId);
@@ -6476,7 +6483,9 @@ public class FSNamesystem implements Namesystem, FSClusterStats,
     if (UserGroupInformation.isSecurityEnabled()
         && (authMethod != AuthenticationMethod.KERBEROS)
         && (authMethod != AuthenticationMethod.KERBEROS_SSL)
-        && (authMethod != AuthenticationMethod.CERTIFICATE)) {
+        && (authMethod != AuthenticationMethod.CERTIFICATE)
+        && (authMethod != AuthenticationMethod.TOKENAUTH)
+        && (authMethod != AuthenticationMethod.TOKENAUTH_SSL)) {
       return false;
     }
     return true;

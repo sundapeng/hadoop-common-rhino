@@ -25,12 +25,15 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.security.HadoopKerberosName;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hadoop.security.tokenauth.token.TokenFactory;
+import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -43,6 +46,7 @@ extends TokenIdentifier {
   private Text owner;
   private Text renewer;
   private Text realUser;
+  private org.apache.hadoop.security.tokenauth.token.Token token;
   private long issueDate;
   private long maxDate;
   private int sequenceNumber;
@@ -50,6 +54,21 @@ extends TokenIdentifier {
   
   public AbstractDelegationTokenIdentifier() {
     this(new Text(), new Text(), new Text());
+  }
+  
+  /**
+   * when using tokenauth, we should add token in delegation token, 
+   * since we can get extra information from token besides user name.
+   * expires of this token should not be checked, and only expires of 
+   * delegation token is checked.
+   */
+  public AbstractDelegationTokenIdentifier(Text owner, Text renewer, Text realUser, 
+      org.apache.hadoop.security.tokenauth.token.Token token) {
+    this(owner, renewer, realUser);
+    if (token == null) {
+      throw new NullPointerException ("token of tokenauth cannot be null.");
+    }
+    this.token = token;
   }
   
   public AbstractDelegationTokenIdentifier(Text owner, Text renewer, Text realUser) {
@@ -99,6 +118,11 @@ extends TokenIdentifier {
       realUgi = UserGroupInformation.createRemoteUser(realUser.toString());
       ugi = UserGroupInformation.createProxyUser(owner.toString(), realUgi);
     }
+    
+    if (token != null && UserGroupInformation.isTokenAuthEnabled()) {
+      ugi.addToken(token);
+    }
+    
     realUgi.setAuthenticationMethod(AuthenticationMethod.TOKEN);
     return ugi;
   }
@@ -113,6 +137,11 @@ extends TokenIdentifier {
   
   public Text getRealUser() {
     return realUser;
+  }
+  
+  public org.apache.hadoop.security.tokenauth.token.Token
+  getToken() {
+    return token;
   }
   
   public void setIssueDate(long issueDate) {
@@ -184,6 +213,11 @@ extends TokenIdentifier {
     owner.readFields(in, Text.DEFAULT_MAX_LEN);
     renewer.readFields(in, Text.DEFAULT_MAX_LEN);
     realUser.readFields(in, Text.DEFAULT_MAX_LEN);
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      BytesWritable tokenBytes = new BytesWritable();
+      tokenBytes.readFields(in);
+      token = TokenFactory.get().createToken(tokenBytes.getBytes());
+    }
     issueDate = WritableUtils.readVLong(in);
     maxDate = WritableUtils.readVLong(in);
     sequenceNumber = WritableUtils.readVInt(in);
@@ -196,6 +230,11 @@ extends TokenIdentifier {
     owner.write(out);
     renewer.write(out);
     realUser.write(out);
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      BytesWritable tokenBytes = new 
+          BytesWritable(TokenUtils.getBytesOfToken(token));
+      tokenBytes.write(out);
+    }
     WritableUtils.writeVLong(out, issueDate);
     WritableUtils.writeVLong(out, maxDate);
     WritableUtils.writeVInt(out, sequenceNumber);

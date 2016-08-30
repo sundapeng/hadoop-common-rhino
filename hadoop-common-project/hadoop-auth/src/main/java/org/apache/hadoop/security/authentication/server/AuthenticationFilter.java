@@ -350,6 +350,16 @@ public class AuthenticationFilter implements Filter {
         token = null;
       }
       if (authHandler.managementOperation(token, httpRequest, httpResponse)) {
+        /**
+         * For tokenauth, authentication handler should decide whether do authentication.
+         */
+        if(authHandler instanceof AbstractAuthenticationHandler) {
+          if (((AbstractAuthenticationHandler)authHandler)
+              .shouldDoAuthentication(httpRequest)) {
+            token = null;
+          }
+        }
+
         if (token == null) {
           if (LOG.isDebugEnabled()) {
             LOG.debug("Request [{}] triggering authentication", getRequestURL(httpRequest));

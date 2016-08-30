@@ -48,6 +48,11 @@ public class DelegationTokenIdentifier
     super(owner, renewer, realUser);
     this.kind = kind;
   }
+  
+  public DelegationTokenIdentifier(Text owner, Text renewer, Text realUser,
+      org.apache.hadoop.security.tokenauth.token.Token token) {
+    super(owner, renewer, realUser, token);
+  }
 
   /**
    * Returns the kind, <code>TOKEN_KIND</code>.

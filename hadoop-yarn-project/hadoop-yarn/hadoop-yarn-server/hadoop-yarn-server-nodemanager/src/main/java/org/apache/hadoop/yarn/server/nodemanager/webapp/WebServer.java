@@ -39,6 +39,8 @@ import org.apache.hadoop.yarn.webapp.util.WebAppUtils;
 public class WebServer extends AbstractService {
 
   private static final Log LOG = LogFactory.getLog(WebServer.class);
+  private static final String IDENTITY_SERVER_ADDRESS_KEY="hadoop.security.identity.server.http-address";
+  private static final String AUTHORIZATION_SERVER_ADDRESS_KEY="hadoop.security.authorization.server.http-address";
 
   private final Context nmContext;
   private final NMWebApp nmWebApp;
@@ -68,6 +70,14 @@ public class WebServer extends AbstractService {
               YarnConfiguration.NM_WEBAPP_SPNEGO_USER_NAME_KEY)
             .withHttpSpnegoKeytabKey(
               YarnConfiguration.NM_WEBAPP_SPNEGO_KEYTAB_FILE_KEY)
+            .withHttpTokenAuthWebPrincipalKey(
+              YarnConfiguration.NM_WEBAPP_TOKENAUTH_WEB_USER_NAME_KEY)
+            .withHttpTokenAuthWebAuthnFileKey(
+              YarnConfiguration.NM_WEBAPP_TOKENAUTH_WEB_AUTHN_FILE_KEY)
+            .withHttpTokenAuthWebIdentityServerAddressKey(
+              YarnConfiguration.TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY)
+            .withHttpTokenAuthWebAuthorizationServerAddressKey(
+              YarnConfiguration.TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY)
             .start(this.nmWebApp);
       this.port = this.webApp.httpServer().getConnectorAddress(0).getPort();
     } catch (Exception e) {

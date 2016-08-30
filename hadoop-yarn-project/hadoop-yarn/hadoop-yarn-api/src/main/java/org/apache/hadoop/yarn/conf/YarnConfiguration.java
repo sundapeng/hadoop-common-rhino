@@ -254,6 +254,10 @@ public class YarnConfiguration extends Configuration {
   /** The keytab for the resource manager.*/
   public static final String RM_KEYTAB = 
     RM_PREFIX + "keytab";
+  
+  /** The authentication file for the resource manager.*/
+  public static final String RM_AUTHENTICATION_FILE = 
+    RM_PREFIX + "authentication.file";
 
   /**The kerberos principal to be used for spnego filter for RM.*/
   public static final String RM_WEBAPP_SPNEGO_USER_NAME_KEY =
@@ -262,6 +266,14 @@ public class YarnConfiguration extends Configuration {
   /**The kerberos keytab to be used for spnego filter for RM.*/
   public static final String RM_WEBAPP_SPNEGO_KEYTAB_FILE_KEY =
       RM_PREFIX + "webapp.spnego-keytab-file";
+  
+  /**The tokenauth principal to be used for tokenauth filter for RM.*/
+  public static final String RM_WEBAPP_TOKENAUTH_WEB_USER_NAME_KEY = 
+      RM_PREFIX + "webapp.tokenauth-web-principal";
+  
+  /**The tokenauth authn file to be used for tokenauth filter for RM.*/
+  public static final String RM_WEBAPP_TOKENAUTH_WEB_AUTHN_FILE_KEY = 
+      RM_PREFIX + "webapp.tokenauth-web-authn-file";
 
   /** How long to wait until a container is considered dead.*/
   public static final String RM_CONTAINER_ALLOC_EXPIRY_INTERVAL_MS = 
@@ -554,6 +566,9 @@ public class YarnConfiguration extends Configuration {
   
   /** Keytab for NM.*/
   public static final String NM_KEYTAB = NM_PREFIX + "keytab";
+  
+  /** Authentication file for NM. */
+  public static final String NM_AUTHENTICATION_FILE = NM_PREFIX + "authentication.file";
   
   /**List of directories to store localized files in.*/
   public static final String NM_LOCAL_DIRS = NM_PREFIX + "local-dirs";
@@ -882,6 +897,14 @@ public class YarnConfiguration extends Configuration {
   public static final String NM_WEBAPP_SPNEGO_KEYTAB_FILE_KEY =
       NM_PREFIX + "webapp.spnego-keytab-file";
   
+  /**The tokenauth principal to be used for tokenauth filter for NM.*/
+  public static final String NM_WEBAPP_TOKENAUTH_WEB_USER_NAME_KEY =
+      NM_PREFIX + "webapp.tokenauth-web-principal";
+
+  /**The tokenauth authn file to be used for tokenauth filter for NM.*/
+  public static final String NM_WEBAPP_TOKENAUTH_WEB_AUTHN_FILE_KEY =
+      NM_PREFIX + "webapp.tokenauth-web-authn-file";
+  
   public static final String DEFAULT_NM_USER_HOME_DIR= "/home/";
 
   public static final String NM_RECOVERY_PREFIX = NM_PREFIX + "recovery.";
@@ -902,6 +925,9 @@ public class YarnConfiguration extends Configuration {
   
   /** Keytab for Proxy.*/
   public static final String PROXY_KEYTAB = PROXY_PREFIX + "keytab";
+  
+  /** Authentication file for Proxy. */
+  public static final String PROXY_AUTHENTICATION_FILE = PROXY_PREFIX + "authentication.file";
   
   /** The address for the web proxy.*/
   public static final String PROXY_ADDRESS =
@@ -1256,6 +1282,12 @@ public class YarnConfiguration extends Configuration {
   public static final String YARN_HTTP_POLICY_KEY = YARN_PREFIX + "http.policy";
   public static final String YARN_HTTP_POLICY_DEFAULT = HttpConfig.Policy.HTTP_ONLY
       .name();
+  
+  /**
+   * TokenAuth server address key
+   */
+  public static final String TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY = "hadoop.security.identity.server.http-address";
+  public static final String TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY = "hadoop.security.authorization.server.http-address";
 
   public YarnConfiguration() {
     super();

@@ -1,0 +1,131 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * These .proto interfaces are private and stable.
+ * Please see http://wiki.apache.org/hadoop/Compatibility
+ * for what changes are allowed for a *stable* .proto interface.
+ */
+
+option java_package = "org.apache.hadoop.security.tokenauth.proto";
+option java_outer_classname = "IdentityServiceProtocolProtos";
+option java_generic_services = true;
+option java_generate_equals_and_hash = true;
+package hadoop.security.tokenauth;
+
+import "tokenauth_protos.proto";
+
+message NameCallbackProto {
+  optional string prompt = 1;
+  optional string defaultName = 2;
+  optional string inputName = 3;
+}
+
+message PasswordCallbackProto {
+  optional string prompt = 1;
+  optional bool echoOn = 2;
+  optional string inputPassword = 3;
+}
+
+message TextInputCallbackProto {
+  optional string prompt = 1;
+  optional string defaultText = 2;
+  optional string inputText = 3;
+}
+
+message RealmCallbackProto {
+  optional string prompt = 1;
+  optional string defaultRealm = 2;
+  optional string inputRealm = 3;
+}
+
+message TextOutputCallbackProto {
+  optional int32 messageType = 1;
+  optional string message = 2;
+}
+
+message KerberosCallbackProto {
+  optional string krb5ServPrincipal = 1;
+  optional bytes ticket = 2;
+}
+
+message CallbackProto {
+  optional NameCallbackProto nameCb = 1;
+  optional PasswordCallbackProto pwCb = 2;
+  optional TextInputCallbackProto txtInCb = 3;
+  optional RealmCallbackProto realmCb = 4;
+  optional TextOutputCallbackProto txtOutCb = 5;
+  optional KerberosCallbackProto kerberosCb = 6;
+}
+
+message CallbacksProto {
+  repeated CallbackProto cb = 1;
+}
+
+message ResponseProto {
+  optional string sessionId = 1;
+  optional int32 resultCode = 2;
+  optional string failureCause = 3;
+  optional CallbacksProto requiredCallbacks = 4;
+  optional bytes identityToken = 5;
+  optional KeyProto secretKey = 6;
+  optional KeyProto publicKey = 7;
+}
+
+message RequestProto {
+  optional string sessionId = 1;
+  optional CallbacksProto callbacks = 2;
+  optional bool needSecrets = 3;
+}
+
+message RenewTokenRequestProto {
+  optional bytes identityToken = 1;
+  optional uint64 tokenId = 2;
+}
+
+message RenewTokenResponseProto {
+  optional bytes identityToken = 1;
+}
+
+message CancelTokenRequestProto {
+  optional bytes identityToken = 1;
+  optional uint64 tokenId = 3;
+}
+
+message ValidateTokenRequestProto{
+  optional bytes identityToken = 1;
+}
+
+message ValidateTokenResponseProto{
+  optional bool isValid = 1;
+}
+
+message VoidResponseProto {
+}
+
+service IdentityService {
+
+  rpc authenticate(RequestProto) returns(ResponseProto);
+  
+  rpc renewToken(RenewTokenRequestProto) returns(RenewTokenResponseProto);
+  
+  rpc cancelToken(CancelTokenRequestProto) returns(VoidResponseProto);
+  
+  rpc validateToken(ValidateTokenRequestProto) returns(ValidateTokenResponseProto);
+}
+

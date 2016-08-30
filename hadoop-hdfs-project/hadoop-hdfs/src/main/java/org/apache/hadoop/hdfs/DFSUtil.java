@@ -695,6 +695,33 @@ public class DFSUtil {
 
     return principals;
   }
+  
+  /**
+   * Returns a collection of all configured NN TokenAuth principals
+   */
+  public static Set<String> getAllNnTokenAuthPrincipals(Configuration conf) throws IOException {
+    Set<String> principals = new HashSet<String>();
+    for (String nsId : DFSUtil.getNameServiceIds(conf)) {
+      if (HAUtil.isHAEnabled(conf, nsId)) {
+        for (String nnId : DFSUtil.getNameNodeIds(conf, nsId)) {
+          Configuration confForNn = new Configuration(conf);
+          NameNode.initializeGenericKeys(confForNn, nsId, nnId);
+          String principal = SecurityUtil.getServerPrincipal(confForNn
+              .get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY),
+              NameNode.getAddress(confForNn).getHostName());
+          principals.add(principal);
+        }
+      } else {
+        Configuration confForNn = new Configuration(conf);
+        NameNode.initializeGenericKeys(confForNn, nsId, null);
+        String principal = SecurityUtil.getServerPrincipal(confForNn
+            .get(DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY),
+            NameNode.getAddress(confForNn).getHostName());
+        principals.add(principal);
+      }
+    }
+    return principals;
+  }
 
   /**
    * Returns list of InetSocketAddress corresponding to HA NN RPC addresses from
@@ -1634,13 +1661,27 @@ public class DFSUtil {
       Configuration conf, final InetSocketAddress httpAddr,
       final InetSocketAddress httpsAddr, String name, String spnegoUserNameKey,
       String spnegoKeytabFileKey) throws IOException {
+    return httpServerTemplateForNNAndJN(conf, httpAddr, httpsAddr, name, spnegoUserNameKey,
+        spnegoKeytabFileKey, null, null);
+     }
+
+  public static HttpServer2.Builder httpServerTemplateForNNAndJN(Configuration conf,
+      final InetSocketAddress httpAddr, final InetSocketAddress httpsAddr, String name,
+      String spnegoUserNameKey, String spnegoKeytabFileKey, String identityServerAddressKey,
+      String authorizationServerAddressKey) throws IOException {
     HttpConfig.Policy policy = getHttpPolicy(conf);
 
+    // If TokenAuth is not enabled, setTokenAuthUsernameConfKey, setAuthnFileConfKey,
+    // setIdentityServerAddressKey and setAuthorizationServerAddressKey will be ignored.
     HttpServer2.Builder builder = new HttpServer2.Builder().setName(name)
         .setConf(conf).setACL(new AccessControlList(conf.get(DFS_ADMIN, " ")))
         .setSecurityEnabled(UserGroupInformation.isSecurityEnabled())
         .setUsernameConfKey(spnegoUserNameKey)
-        .setKeytabConfKey(getSpnegoKeytabKey(conf, spnegoKeytabFileKey));
+        .setKeytabConfKey(getSpnegoKeytabKey(conf, spnegoKeytabFileKey))
+        .setTokenAuthUsernameConfKey(spnegoUserNameKey)
+        .setAuthnFileConfKey(spnegoKeytabFileKey)
+        .setIdentityServerAddressKey(identityServerAddressKey)
+        .setAuthorizationServerAddressKey(authorizationServerAddressKey);
 
     // initialize the webserver for uploading/downloading files.
     LOG.info("Starting web server as: "
@@ -1694,5 +1735,21 @@ public class DFSUtil {
           Arrays.toString(resultsArray));
       }
     }
+  }
+
+  /**
+   * Get TokenAuth authnfile Key from configuration
+   */
+  public static String getTokenAuthWebKeytabKey(Configuration conf, String defaultKey) {
+    String value = 
+        conf.get(DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_AUTHNFILE_KEY);
+    return (value == null || value.isEmpty()) ?
+        defaultKey : DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_AUTHNFILE_KEY;
+  }
+  
+  public static String getTokenAuthWebPrincipalKey(Configuration conf, String key) {
+    String value = conf.get(key);
+    return (value == null || value.isEmpty()) ?
+        DFSConfigKeys.DFS_WEB_AUTHENTICATION_TOKENAUTH_PRINCIPAL_KEY : key;
   }
 }

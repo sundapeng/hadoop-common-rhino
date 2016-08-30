@@ -1043,20 +1043,22 @@ public class DataNode extends Configured
   }
   
   /** Ensure the authentication method is kerberos */
-  private void checkKerberosAuthMethod(String msg) throws IOException {
+  private void checkSecurityAuthMethod(String msg) throws IOException {
     // User invoking the call must be same as the datanode user
     if (!UserGroupInformation.isSecurityEnabled()) {
       return;
     }
-    if (UserGroupInformation.getCurrentUser().getAuthenticationMethod() != 
-        AuthenticationMethod.KERBEROS) {
+    AuthenticationMethod authenticationMethod = 
+        UserGroupInformation.getCurrentUser().getAuthenticationMethod();
+    if (authenticationMethod != AuthenticationMethod.KERBEROS
+        || authenticationMethod != AuthenticationMethod.TOKENAUTH) {
       throw new AccessControlException("Error in " + msg
-          + "Only kerberos based authentication is allowed.");
+          + "Only kerberos or tokenauth based authentication is allowed.");
     }
   }
   
   private void checkBlockLocalPathAccess() throws IOException {
-    checkKerberosAuthMethod("getBlockLocalPathInfo()");
+    checkSecurityAuthMethod("getBlockLocalPathInfo()");
     String currentUser = UserGroupInformation.getCurrentUser().getShortUserName();
     if (!usersWithLocalPathAccess.contains(currentUser)) {
       throw new AccessControlException(
@@ -1728,8 +1730,13 @@ public class DataNode extends Configured
     }
     Collection<StorageLocation> dataLocations = getStorageLocations(conf);
     UserGroupInformation.setConfiguration(conf);
-    SecurityUtil.login(conf, DFS_DATANODE_KEYTAB_FILE_KEY,
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      SecurityUtil.tokenAuthLogin(conf, DFS_DATANODE_AUTHENTICATION_FILE_KEY, 
+          DFS_DATANODE_TOKENAUTH_PRINCIPAL_KEY);
+    } else {
+      SecurityUtil.login(conf, DFS_DATANODE_KEYTAB_FILE_KEY,
         DFS_DATANODE_KERBEROS_PRINCIPAL_KEY);
+    }
     return makeInstance(dataLocations, conf, resources);
   }
 

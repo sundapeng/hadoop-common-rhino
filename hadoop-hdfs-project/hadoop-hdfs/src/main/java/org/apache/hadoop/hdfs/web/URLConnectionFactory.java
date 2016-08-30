@@ -159,8 +159,12 @@ public class URLConnectionFactory {
       if (LOG.isDebugEnabled()) {
         LOG.debug("open AuthenticatedURL connection" + url);
       }
-      UserGroupInformation.getCurrentUser().checkTGTAndReloginFromKeytab();
+      UserGroupInformation.getCurrentUser().checkSecurityAndRelogin();
       final AuthenticatedURL.Token authToken = new AuthenticatedURL.Token();
+      if (UserGroupInformation.isTokenAuthEnabled()) {
+        return new AuthenticatedURL(new TokenAuthUgiAuthenticator(), connConfigurator).openConnection(url,
+            authToken);
+      }
       return new AuthenticatedURL(AUTH, connConfigurator).openConnection(url,
           authToken);
     } else {

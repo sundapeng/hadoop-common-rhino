@@ -28,6 +28,7 @@ import org.apache.hadoop.security.SecurityInfo;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenInfo;
 import org.apache.hadoop.security.token.TokenSelector;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 public class ClientHSSecurityInfo extends SecurityInfo {
     
@@ -38,6 +39,31 @@ public class ClientHSSecurityInfo extends SecurityInfo {
       return null;
     }
     return new KerberosInfo() {
+
+      @Override
+      public Class<? extends Annotation> annotationType() {
+        return null;
+      }
+
+      @Override
+      public String serverPrincipal() {
+        return JHAdminConfig.MR_HISTORY_PRINCIPAL;
+      }
+
+      @Override
+      public String clientPrincipal() {
+        return null;
+      }
+    };
+  }
+  
+  @Override
+  public TokenAuthInfo getTokenAuthInfo(Class<?> protocol, Configuration conf) {
+    if (!protocol
+        .equals(HSClientProtocolPB.class)) {
+      return null;
+    }
+    return new TokenAuthInfo() {
 
       @Override
       public Class<? extends Annotation> annotationType() {

@@ -28,6 +28,7 @@ import org.apache.hadoop.security.SecurityInfo;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenInfo;
 import org.apache.hadoop.security.token.TokenSelector;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 import org.apache.hadoop.yarn.server.nodemanager.api.LocalizationProtocolPB;
 
 public class LocalizerSecurityInfo extends SecurityInfo {
@@ -59,5 +60,10 @@ public class LocalizerSecurityInfo extends SecurityInfo {
         return LocalizerTokenSelector.class;
       }
     };
+  }
+
+  @Override
+  public TokenAuthInfo getTokenAuthInfo(Class<?> protocol, Configuration conf) {
+    return null;
   }
 }

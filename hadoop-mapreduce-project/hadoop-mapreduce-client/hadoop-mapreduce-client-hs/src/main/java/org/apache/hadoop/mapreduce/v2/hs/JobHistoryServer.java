@@ -34,6 +34,7 @@ import org.apache.hadoop.mapreduce.v2.util.MRWebAppUtil;
 import org.apache.hadoop.metrics2.lib.DefaultMetricsSystem;
 import org.apache.hadoop.metrics2.source.JvmMetrics;
 import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.util.ExitUtil;
@@ -171,10 +172,15 @@ public class JobHistoryServer extends CompositeService {
 
   protected void doSecureLogin(Configuration conf) throws IOException {
     InetSocketAddress socAddr = getBindAddress(conf);
-    SecurityUtil.login(conf, JHAdminConfig.MR_HISTORY_KEYTAB,
-        JHAdminConfig.MR_HISTORY_PRINCIPAL, socAddr.getHostName());
+    if(SecurityUtil.getAuthenticationMethod(conf) == AuthenticationMethod.KERBEROS) {
+      SecurityUtil.login(conf, JHAdminConfig.MR_HISTORY_KEYTAB,
+          JHAdminConfig.MR_HISTORY_PRINCIPAL);
+    } else if(SecurityUtil.getAuthenticationMethod(conf) == AuthenticationMethod.TOKENAUTH) {
+      SecurityUtil.tokenAuthLogin(conf, JHAdminConfig.MR_HISTORY_AUTHENTICATION_FILE, 
+          JHAdminConfig.MR_HISTORY_PRINCIPAL);
+    }
   }
-
+  
   /**
    * Retrieve JHS bind address from configuration
    *

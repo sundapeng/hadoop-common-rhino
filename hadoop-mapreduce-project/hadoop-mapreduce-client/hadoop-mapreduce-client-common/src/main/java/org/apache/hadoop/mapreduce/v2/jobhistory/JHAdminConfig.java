@@ -100,6 +100,9 @@ public class JHAdminConfig {
   /** The location of the Kerberos keytab file.*/
   public static final String MR_HISTORY_KEYTAB = MR_HISTORY_PREFIX + "keytab";
   
+  /** The location of the tokenauth authentication file.*/
+  public static final String MR_HISTORY_AUTHENTICATION_FILE = MR_HISTORY_PREFIX + "authentication.file";
+  
   /** Size of the loaded job cache.*/
   public static final String MR_HISTORY_LOADED_JOB_CACHE_SIZE = 
     MR_HISTORY_PREFIX + "loadedjobs.cache.size";
@@ -159,6 +162,14 @@ public class JHAdminConfig {
   /** The kerberos keytab to be used for spnego filter for history server*/
   public static final String MR_WEBAPP_SPNEGO_KEYTAB_FILE_KEY =
       MR_HISTORY_PREFIX + "webapp.spnego-keytab-file";
+  
+  /**The TokenAuth principal to be used for tokenauth filter for history server*/
+  public static final String MR_WEBAPP_TOKENAUTH_WEB_USER_NAME_KEY = 
+      MR_HISTORY_PREFIX + "webapp.tokenauth-web-principal";
+  
+  /** The TokenAuth authnFile to be used for tokenauth filter for history server*/
+  public static final String MR_WEBAPP_TOKENAUTH_WEB_AUTHN_FILE_KEY = 
+      MR_HISTORY_PREFIX + "webapp.tokenauth-web-authn-file";
 
   /*
    * HS Service Authorization

@@ -92,6 +92,11 @@ public class WebApps {
     boolean devMode = false;
     private String spnegoPrincipalKey;
     private String spnegoKeytabKey;
+    /* token auth */
+    private String tokenAuthWebPrincipalKey;
+    private String tokenAuthWebAuthnFileKey;
+    private String tokenAuthWebIdentityServerAddressKey;
+    private String tokenAuthWebAuthorizationServerAddressKey;
     private final HashSet<ServletStruct> servlets = new HashSet<ServletStruct>();
     private final HashMap<String, Object> attributes = new HashMap<String, Object>();
 
@@ -159,6 +164,26 @@ public class WebApps {
     
     public Builder<T> withHttpSpnegoKeytabKey(String spnegoKeytabKey) {
       this.spnegoKeytabKey = spnegoKeytabKey;
+      return this;
+    }
+    
+    public Builder<T> withHttpTokenAuthWebPrincipalKey(String tokenAuthWebPrincipalKey) {
+      this.tokenAuthWebPrincipalKey = tokenAuthWebPrincipalKey;
+      return this;
+    }
+    
+    public Builder<T> withHttpTokenAuthWebAuthnFileKey(String tokenAuthWebAuthnFileKey) {
+      this.tokenAuthWebAuthnFileKey = tokenAuthWebAuthnFileKey;
+      return this;
+    }
+
+    public Builder<T> withHttpTokenAuthWebIdentityServerAddressKey(String tokenAuthWebIdentityServerAddressKey){
+      this.tokenAuthWebIdentityServerAddressKey=tokenAuthWebIdentityServerAddressKey;
+      return this;
+    }
+
+    public Builder<T> withHttpTokenAuthWebAuthorizationServerAddressKey(String tokenAuthWebAuthorizationServerAddressKey){
+      this.tokenAuthWebAuthorizationServerAddressKey=tokenAuthWebAuthorizationServerAddressKey;
       return this;
     }
 
@@ -246,6 +271,8 @@ public class WebApps {
         boolean hasSpnegoConf = spnegoPrincipalKey != null
             && conf.get(spnegoPrincipalKey) != null && spnegoKeytabKey != null
             && conf.get(spnegoKeytabKey) != null;
+			
+	    // TODO: TokenAuth
 
         if (hasSpnegoConf) {
           builder.setUsernameConfKey(spnegoPrincipalKey)

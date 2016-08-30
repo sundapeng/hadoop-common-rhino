@@ -310,7 +310,7 @@ public class StandbyCheckpointer {
         try {
           // We may have lost our ticket since last checkpoint, log in again, just in case
           if (UserGroupInformation.isSecurityEnabled()) {
-            UserGroupInformation.getCurrentUser().checkTGTAndReloginFromKeytab();
+            UserGroupInformation.getCurrentUser().checkSecurityAndRelogin();
           }
           
           final long now = monotonicNow();

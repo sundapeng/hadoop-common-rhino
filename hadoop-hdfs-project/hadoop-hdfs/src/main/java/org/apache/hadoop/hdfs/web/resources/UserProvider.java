@@ -50,8 +50,13 @@ public class UserProvider
     final Configuration conf = (Configuration) servletcontext
         .getAttribute(JspHelper.CURRENT_CONF);
     try {
-      return JspHelper.getUGI(servletcontext, request, conf,
-          AuthenticationMethod.KERBEROS, false);
+      if (UserGroupInformation.isTokenAuthEnabled()) {
+        return JspHelper.getUGI(servletcontext, request, conf,
+            AuthenticationMethod.TOKENAUTH, false);
+      } else {
+        return JspHelper.getUGI(servletcontext, request, conf,
+            AuthenticationMethod.KERBEROS, false);
+      }
     } catch (IOException e) {
       throw new SecurityException(
           "Failed to obtain user group information: " + e, e);

@@ -110,6 +110,9 @@ import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hadoop.security.authorize.ServiceAuthorizationManager;
 import org.apache.hadoop.security.token.SecretManager;
 import org.apache.hadoop.security.token.SecretManager.InvalidToken;
+import org.apache.hadoop.security.tokenauth.secrets.Secrets;
+import org.apache.hadoop.security.tokenauth.token.TokenFactory;
+import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.util.ProtoUtil;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -1219,6 +1222,25 @@ public abstract class Server {
               "Can't retrieve username from tokenIdentifier.");
         }
         ugi.addTokenIdentifier(tokenId);
+        return ugi;
+      } else if (authMethod == AuthMethod.TOKENAUTH) {
+        /* authorizedId is the access token */
+        UserGroupInformation ugi = null;
+        byte[] accessToken = TokenUtils.decodeToken(authorizedId);
+        try {
+          Secrets validationSecrets = 
+              UserGroupInformation.getLoginUser().getValidationSecrets();
+          if(validationSecrets == null) {
+            throw new AccessControlException("Can't find a validation secrets");
+          }
+
+          org.apache.hadoop.security.tokenauth.token.Token
+              token = TokenFactory.get().createAccessToken(validationSecrets, accessToken);
+          ugi = UserGroupInformation.createRemoteUser(token.getPrincipal().getName());
+          ugi.addToken(token);
+        } catch (IOException e) {
+          throw new AccessControlException(e);
+        }
         return ugi;
       } else {
         return UserGroupInformation.createRemoteUser(authorizedId);

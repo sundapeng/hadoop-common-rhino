@@ -110,7 +110,10 @@ import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableFactory;
 import org.apache.hadoop.ipc.ClientId;
 import org.apache.hadoop.ipc.RpcConstants;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.delegation.DelegationKey;
+import org.apache.hadoop.security.tokenauth.token.TokenFactory;
+import org.apache.hadoop.security.tokenauth.token.TokenUtils;
 import org.apache.hadoop.util.PureJavaCrc32;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -3972,6 +3975,14 @@ public abstract class FSEditLogOp {
         token.getRenewer().toString());
     XMLUtils.addSaxString(contentHandler, "REALUSER",
         token.getRealUser().toString());
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      try {
+        XMLUtils.addSaxString(contentHandler, "TOKEN", 
+            TokenUtils.encodeToken(TokenUtils.getBytesOfToken(token.getToken())));
+      } catch (IOException e) {
+        throw new SAXException (e);
+      }
+    }
     XMLUtils.addSaxString(contentHandler, "ISSUE_DATE",
         Long.toString(token.getIssueDate()));
     XMLUtils.addSaxString(contentHandler, "MAX_DATE",
@@ -3996,9 +4007,20 @@ public abstract class FSEditLogOp {
     long issueDate = Long.parseLong(st.getValue("ISSUE_DATE"));
     long maxDate = Long.parseLong(st.getValue("MAX_DATE"));
     int masterKeyId = Integer.parseInt(st.getValue("MASTER_KEY_ID"));
-    DelegationTokenIdentifier token =
-        new DelegationTokenIdentifier(new Text(owner),
-            new Text(renewer), new Text(realuser));
+    DelegationTokenIdentifier token;
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      String stoken = st.getValue("TOKEN");
+      try {
+        token = new DelegationTokenIdentifier(
+            new Text(owner), new Text(renewer), new Text(realuser), 
+            TokenFactory.get().createToken(TokenUtils.decodeToken(stoken)));
+      } catch (IOException e) {
+        throw new InvalidXmlException("Invalid authn token.");
+      }
+    } else {
+      token = new DelegationTokenIdentifier(
+          new Text(owner), new Text(renewer), new Text(realuser));
+    }
     token.setSequenceNumber(seqNum);
     token.setIssueDate(issueDate);
     token.setMaxDate(maxDate);

@@ -17,6 +17,9 @@
  */
 package org.apache.hadoop.hdfs.qjournal.server;
 
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_JOURNALNODE_TOKENAUTH_INTERNAL_WEB_PRINCIPAL;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -25,11 +28,14 @@ import javax.servlet.ServletContext;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.DFSUtil;
 import org.apache.hadoop.hdfs.server.common.JspHelper;
 import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 
 /**
  * Encapsulates the HTTP server started by the Journal Service.
@@ -43,9 +49,25 @@ public class JournalNodeHttpServer {
 
   private final Configuration conf;
 
+  private final String usernameConfKey;
+  private final String authFileConfKey;
+  private final String identityServerAddressKey;
+  private final String authorizationServerAddressKey;
+
   JournalNodeHttpServer(Configuration conf, JournalNode jn) {
     this.conf = conf;
     this.localJournalNode = jn;
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      usernameConfKey = DFSUtil.getTokenAuthWebPrincipalKey(conf,
+          DFS_JOURNALNODE_TOKENAUTH_INTERNAL_WEB_PRINCIPAL);
+      authFileConfKey = DFSUtil.getTokenAuthWebKeytabKey(conf,
+          DFS_JOURNALNODE_AUTHENTICATION_FILE_KEY);
+    } else {
+      usernameConfKey = DFSConfigKeys.DFS_JOURNALNODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY;
+      authFileConfKey = DFSConfigKeys.DFS_JOURNALNODE_KEYTAB_FILE_KEY;
+    }
+    identityServerAddressKey=DFSConfigKeys.DFS_TOKENAUTH_IDENTITY_SERVER_HTTP_ADDRESS_KEY;
+    authorizationServerAddressKey=DFSConfigKeys.DFS_TOKENAUTH_AUTHORIZATION_SERVER_HTTP_ADDRESS_KEY;
   }
 
   void start() throws IOException {
@@ -56,10 +78,8 @@ public class JournalNodeHttpServer {
         DFSConfigKeys.DFS_JOURNALNODE_HTTPS_ADDRESS_DEFAULT);
     InetSocketAddress httpsAddr = NetUtils.createSocketAddr(httpsAddrString);
 
-    HttpServer2.Builder builder = DFSUtil.httpServerTemplateForNNAndJN(conf,
-        httpAddr, httpsAddr, "journal",
-        DFSConfigKeys.DFS_JOURNALNODE_KERBEROS_INTERNAL_SPNEGO_PRINCIPAL_KEY,
-        DFSConfigKeys.DFS_JOURNALNODE_KEYTAB_FILE_KEY);
+    HttpServer2.Builder builder = DFSUtil.httpServerTemplateForNNAndJN(conf, httpAddr, httpsAddr,
+        "journal", usernameConfKey, authFileConfKey, identityServerAddressKey, authorizationServerAddressKey);
 
     httpServer = builder.build();
     httpServer.setAttribute(JN_ATTRIBUTE_KEY, localJournalNode);

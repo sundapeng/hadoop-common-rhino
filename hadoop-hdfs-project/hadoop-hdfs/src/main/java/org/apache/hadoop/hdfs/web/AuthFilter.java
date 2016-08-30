@@ -36,9 +36,11 @@ import javax.servlet.http.HttpServletRequestWrapper;
 
 import org.apache.hadoop.hdfs.web.resources.DelegationParam;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.security.authentication.server.AuthenticationFilter;
 import org.apache.hadoop.security.authentication.server.KerberosAuthenticationHandler;
 import org.apache.hadoop.security.authentication.server.PseudoAuthenticationHandler;
+import org.apache.hadoop.security.tokenauth.web.TokenAuthAuthenticationHandler;
 
 /**
  * Subclass of {@link AuthenticationFilter} that
@@ -62,8 +64,17 @@ public class AuthFilter extends AuthenticationFilter {
       throws ServletException {
     final Properties p = super.getConfiguration(CONF_PREFIX, config);
     // set authentication type
-    p.setProperty(AUTH_TYPE, UserGroupInformation.isSecurityEnabled()?
-        KerberosAuthenticationHandler.TYPE: PseudoAuthenticationHandler.TYPE);
+    String authType = null;
+    if(UserGroupInformation.isSecurityEnabled()) {
+      if(UserGroupInformation.isTokenAuthEnabled()) {
+        authType = TokenAuthAuthenticationHandler.class.getName();
+      } else {
+        authType = KerberosAuthenticationHandler.TYPE;
+      }
+    } else {
+      authType = PseudoAuthenticationHandler.TYPE;
+    }
+    p.setProperty(AUTH_TYPE, authType);
     // if not set, enable anonymous for pseudo authentication
     if (p.getProperty(PseudoAuthenticationHandler.ANONYMOUS_ALLOWED) == null) {
       p.setProperty(PseudoAuthenticationHandler.ANONYMOUS_ALLOWED, "true");

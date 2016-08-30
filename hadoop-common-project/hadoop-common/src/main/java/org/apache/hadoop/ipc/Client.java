@@ -540,6 +540,21 @@ public class Client {
       return false;
     }
     
+    private synchronized boolean shouldAuthenticateOverTokenAuth() throws IOException {
+      UserGroupInformation loginUser = UserGroupInformation.getLoginUser();
+      UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+      UserGroupInformation realUser = currentUser.getRealUser();
+      // If identity token is expired, the creation of SaslTokenAuthClient will fail,
+      // and authMethod will be SIMPLE (default value). So authMethod == AuthMethod.TOKENAUTH
+      // is NOT a condition.
+      if (loginUser != null
+          && loginUser.getAuthenticationMethod().getAuthMethod() == AuthMethod.TOKENAUTH
+          && (loginUser.equals(currentUser) || loginUser.equals(realUser))) {
+        return true;
+      }
+      return false;
+    }
+
     private synchronized AuthMethod setupSaslConnection(final InputStream in2, 
         final OutputStream out2) throws IOException {
       // Do not use Client.conf here! We must use ConnectionId.conf, since the
@@ -643,18 +658,23 @@ public class Client {
           final short MAX_BACKOFF = 5000;
           closeConnection();
           disposeSasl();
-          if (shouldAuthenticateOverKrb()) {
+          if (shouldAuthenticateOverKrb() || shouldAuthenticateOverTokenAuth()) {
             if (currRetries < maxRetries) {
               if(LOG.isDebugEnabled()) {
                 LOG.debug("Exception encountered while connecting to "
                     + "the server : " + ex);
               }
               // try re-login
-              if (UserGroupInformation.isLoginKeytabBased()) {
-                UserGroupInformation.getLoginUser().reloginFromKeytab();
-              } else if (UserGroupInformation.isLoginTicketBased()) {
-                UserGroupInformation.getLoginUser().reloginFromTicketCache();
+              if (UserGroupInformation.isTokenAuthEnabled()) {
+                UserGroupInformation.getLoginUser().reloginForTokenAuth();
+              } else {
+                if (UserGroupInformation.isLoginKeytabBased()) {
+                  UserGroupInformation.getLoginUser().reloginFromKeytab();
+                } else if (UserGroupInformation.isLoginTicketBased()) {
+                  UserGroupInformation.getLoginUser().reloginFromTicketCache();
+                }
               }
+
               // have granularity of milliseconds
               //we are sleeping with the Connection lock held but since this
               //connection instance is being used for connecting to the server

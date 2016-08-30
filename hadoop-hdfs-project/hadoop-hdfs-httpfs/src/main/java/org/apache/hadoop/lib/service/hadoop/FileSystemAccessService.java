@@ -59,6 +59,8 @@ public class FileSystemAccessService extends BaseService implements FileSystemAc
   public static final String AUTHENTICATION_TYPE = "authentication.type";
   public static final String KERBEROS_KEYTAB = "authentication.kerberos.keytab";
   public static final String KERBEROS_PRINCIPAL = "authentication.kerberos.principal";
+  public static final String TOKENAUTH_AUTHNFILE = "authentication.tokenauth.authnfile";
+  public static final String TOKENAUTH_PRINCIPAL = "authentication.tokenauth.principal";
   public static final String FS_CACHE_PURGE_FREQUENCY = "filesystem.cache.purge.frequency";
   public static final String FS_CACHE_PURGE_TIMEOUT = "filesystem.cache.purge.timeout";
 
@@ -165,6 +167,26 @@ public class FileSystemAccessService extends BaseService implements FileSystemAc
         throw new ServiceException(FileSystemAccessException.ERROR.H02, ex.getMessage(), ex);
       }
       LOG.info("Using FileSystemAccess Kerberos authentication, principal [{}] keytab [{}]", principal, keytab);
+    } else if (security.equals("tokenauth")) {
+      String defaultName = getServer().getName();
+      String authnFile = System.getProperty("user.home") + "/" + defaultName + ".authnFile";
+      authnFile = getServiceConfig().get(TOKENAUTH_AUTHNFILE, authnFile).trim();
+      if (authnFile.length() == 0) {
+        throw new ServiceException(FileSystemAccessException.ERROR.H01, TOKENAUTH_AUTHNFILE);
+      }
+      String principal = getServiceConfig().get(TOKENAUTH_PRINCIPAL).trim();
+      if (principal.length() == 0) {
+        throw new ServiceException(FileSystemAccessException.ERROR.H01, TOKENAUTH_PRINCIPAL);
+      }
+      Configuration conf = new Configuration();
+      conf.set("hadoop.security.authentication", "tokenauth");
+      UserGroupInformation.setConfiguration(conf);
+      try {
+        UserGroupInformation.loginUserFromAuthnFile(authnFile, principal);
+      } catch (IOException ex) {
+        throw new ServiceException(FileSystemAccessException.ERROR.H12, ex.getMessage(), ex);
+      }
+      LOG.info("Using FileSystemAccess TokenAuth authentication, principal [{}] authnfile [{}]", principal, authnFile);
     } else if (security.equals("simple")) {
       Configuration conf = new Configuration();
       conf.set("hadoop.security.authentication", "simple");

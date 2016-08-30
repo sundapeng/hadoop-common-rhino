@@ -66,9 +66,17 @@ import org.apache.hadoop.metrics2.lib.MetricsRegistry;
 import org.apache.hadoop.metrics2.lib.MutableQuantiles;
 import org.apache.hadoop.metrics2.lib.MutableRate;
 import org.apache.hadoop.security.SaslRpcServer.AuthMethod;
+import org.apache.hadoop.security.authentication.client.Authenticator;
 import org.apache.hadoop.security.authentication.util.KerberosUtil;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hadoop.security.tokenauth.DefaultTokenAuthCallbackHandler;
+import org.apache.hadoop.security.tokenauth.cache.TokenCache;
+import org.apache.hadoop.security.tokenauth.login.TokenAuthLoginModule;
+import org.apache.hadoop.security.tokenauth.secrets.Secrets;
+import org.apache.hadoop.security.tokenauth.token.TokenPrincipal;
+import org.apache.hadoop.security.tokenauth.token.TokenUtils;
+import org.apache.hadoop.security.tokenauth.web.TokenAuthAuthenticator;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Time;
 
@@ -158,6 +166,11 @@ public class UserGroupInformation {
         user = getCanonicalUser(KerberosPrincipal.class);
         if (LOG.isDebugEnabled()) {
           LOG.debug("using kerberos user:"+user);
+        }
+      } else if (isAuthenticationMethodEnabled(AuthenticationMethod.TOKENAUTH)) {
+        user = getCanonicalUser(TokenPrincipal.class);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("using tokenauth user:"+user);
         }
       }
       //If we don't have a kerberos user and security is disabled, check
@@ -317,6 +330,10 @@ public class UserGroupInformation {
     return !isAuthenticationMethodEnabled(AuthenticationMethod.SIMPLE);
   }
   
+  public static boolean isTokenAuthEnabled() {
+    return isAuthenticationMethodEnabled(AuthenticationMethod.TOKENAUTH);
+  }
+  
   @InterfaceAudience.Private
   @InterfaceStability.Evolving
   private static boolean isAuthenticationMethodEnabled(AuthenticationMethod method) {
@@ -336,6 +353,8 @@ public class UserGroupInformation {
   private final User user;
   private final boolean isKeytab;
   private final boolean isKrbTkt;
+  private static String tokenAuthPrincipal = null;
+  private static String tokenAuthFile = null;
   
   private static String OS_LOGIN_MODULE_NAME;
   private static Class<? extends Principal> OS_PRINCIPAL_CLASS;
@@ -446,6 +465,10 @@ public class UserGroupInformation {
       "hadoop-user-kerberos";
     private static final String KEYTAB_KERBEROS_CONFIG_NAME = 
       "hadoop-keytab-kerberos";
+    private static final String USER_TOKENAUTH_CONFIG_NAME = 
+      "hadoop-user-tokenauth";
+    private static final String AUTHNFILE_TOKENAUTH_CONFIG_NAME = 
+      "hadoop-authnfile-tokenauth";
 
     private static final Map<String, String> BASIC_JAAS_OPTIONS =
       new HashMap<String,String>();
@@ -455,7 +478,7 @@ public class UserGroupInformation {
         BASIC_JAAS_OPTIONS.put("debug", "true");
       }
     }
-    
+
     private static final AppConfigurationEntry OS_SPECIFIC_LOGIN =
       new AppConfigurationEntry(OS_LOGIN_MODULE_NAME,
                                 LoginModuleControlFlag.REQUIRED,
@@ -506,6 +529,27 @@ public class UserGroupInformation {
       new AppConfigurationEntry(KerberosUtil.getKrb5LoginModuleName(),
                                 LoginModuleControlFlag.REQUIRED,
                                 KEYTAB_KERBEROS_OPTIONS);
+    private static final Map<String, String> USER_TOKENAUTH_OPTIONS = 
+        new HashMap<String, String>();
+    static {
+      USER_TOKENAUTH_OPTIONS.put("doNotPrompt", "true");
+      USER_TOKENAUTH_OPTIONS.put("useTokenCache", "true");
+      USER_TOKENAUTH_OPTIONS.put("renewToken", "true");
+    }
+    private static final AppConfigurationEntry USER_TOKENAUTH_LOGIN = 
+      new AppConfigurationEntry(TokenAuthLoginModule.class.getName(),
+                                LoginModuleControlFlag.OPTIONAL,
+                                USER_TOKENAUTH_OPTIONS);
+    private static final Map<String, String> AUTHNFILE_TOKENAUTH_OPTIONS = 
+      new HashMap<String, String>();
+    static {
+      AUTHNFILE_TOKENAUTH_OPTIONS.put("doNotPrompt", "true");
+      AUTHNFILE_TOKENAUTH_OPTIONS.put("useAuthnFile", "true");
+    }
+    private static final AppConfigurationEntry AUTHNFILE_TOKENAUTH_LOGIN = 
+      new AppConfigurationEntry(TokenAuthLoginModule.class.getName(),
+                                LoginModuleControlFlag.REQUIRED,
+                                AUTHNFILE_TOKENAUTH_OPTIONS);
     
     private static final AppConfigurationEntry[] SIMPLE_CONF = 
       new AppConfigurationEntry[]{OS_SPECIFIC_LOGIN, HADOOP_LOGIN};
@@ -516,6 +560,13 @@ public class UserGroupInformation {
 
     private static final AppConfigurationEntry[] KEYTAB_KERBEROS_CONF =
       new AppConfigurationEntry[]{KEYTAB_KERBEROS_LOGIN, HADOOP_LOGIN};
+
+    private static final AppConfigurationEntry[] USER_TOKENAUTH_CONF = 
+      new AppConfigurationEntry[]{OS_SPECIFIC_LOGIN, USER_TOKENAUTH_LOGIN,
+                                  HADOOP_LOGIN};
+    
+    private static final AppConfigurationEntry[] AUTHNFILE_TOKENAUTH_CONF =
+      new AppConfigurationEntry[]{AUTHNFILE_TOKENAUTH_LOGIN, HADOOP_LOGIN};
 
     @Override
     public AppConfigurationEntry[] getAppConfigurationEntry(String appName) {
@@ -532,6 +583,12 @@ public class UserGroupInformation {
         }
         KEYTAB_KERBEROS_OPTIONS.put("principal", keytabPrincipal);
         return KEYTAB_KERBEROS_CONF;
+      } else if (USER_TOKENAUTH_CONFIG_NAME.equals(appName)) {
+        return USER_TOKENAUTH_CONF;
+      } else if (AUTHNFILE_TOKENAUTH_CONFIG_NAME.equals(appName)) {
+        AUTHNFILE_TOKENAUTH_OPTIONS.put("authnFile", tokenAuthFile);
+        AUTHNFILE_TOKENAUTH_OPTIONS.put("principal", tokenAuthPrincipal);
+        return AUTHNFILE_TOKENAUTH_CONF;
       }
       return null;
     }
@@ -570,10 +627,26 @@ public class UserGroupInformation {
     ClassLoader oldCCL = t.getContextClassLoader();
     t.setContextClassLoader(HadoopLoginModule.class.getClassLoader());
     try {
-      return new LoginContext(appName, subject, null, loginConf);
+      return new LoginContext(appName, subject, getCallbackHandler(), loginConf);
     } finally {
       t.setContextClassLoader(oldCCL);
     }
+  }
+
+  private static CallbackHandler getCallbackHandler() {
+    if (isTokenAuthEnabled()) {
+      return new DefaultTokenAuthCallbackHandler(conf);
+    }
+    
+    return null;
+  }
+
+  public static Authenticator getAuthenticator() {
+    if (isTokenAuthEnabled()) {
+      return new TokenAuthAuthenticator(SecurityUtil.getHASClient(conf));
+    }
+    
+    return null;
   }
 
   private LoginContext getLogin() {
@@ -592,8 +665,14 @@ public class UserGroupInformation {
   UserGroupInformation(Subject subject) {
     this.subject = subject;
     this.user = subject.getPrincipals(User.class).iterator().next();
-    this.isKeytab = !subject.getPrivateCredentials(KerberosKey.class).isEmpty();
-    this.isKrbTkt = !subject.getPrivateCredentials(KerberosTicket.class).isEmpty();
+    if(subject.getPrivateCredentials(
+        org.apache.hadoop.security.tokenauth.token.Token.class).isEmpty()) {
+      this.isKeytab = !subject.getPrivateCredentials(KerberosKey.class).isEmpty();
+      this.isKrbTkt = !subject.getPrivateCredentials(KerberosTicket.class).isEmpty();
+    } else {
+      this.isKeytab = false;
+      this.isKrbTkt = false;
+    }
   }
   
   /**
@@ -703,6 +782,59 @@ public class UserGroupInformation {
           ticketCache, le);
     }
   }
+  
+  /**
+   * Create a UserGroupInformation from a Token cache.
+   * 
+   * @param user                The principal name to load from the token
+   *                            cache
+   * @param tokenCache          the path to the token cache file
+   *
+   * @throws IOException        
+   */
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public static UserGroupInformation getUGIFromTokenCache(
+      String tokenCache, String user) throws IOException {
+    if (!isTokenAuthEnabled()) {
+      return getBestUGI(null, user);
+    }
+    
+    try {
+      Map<String,String> taOptions = new HashMap<String,String>();
+      taOptions.put("doNotPrompt", "true");
+      taOptions.put("useTokenCache", "true");
+      taOptions.put("useAuthnFile", "false");
+      taOptions.put("renewToken", "false");
+      AppConfigurationEntry ace = new AppConfigurationEntry(
+          TokenAuthLoginModule.class.getName(),
+          LoginModuleControlFlag.REQUIRED,
+          taOptions);
+      DynamicConfiguration dynConf =
+          new DynamicConfiguration(new AppConfigurationEntry[]{ ace });
+      LoginContext login = newLoginContext(
+          HadoopConfiguration.USER_TOKENAUTH_CONFIG_NAME, null, dynConf);
+      login.login();
+
+      Subject loginSubject = login.getSubject();
+      Set<Principal> loginPrincipals = loginSubject.getPrincipals();
+      if (loginPrincipals.isEmpty()) {
+        throw new RuntimeException("No login principals found!");
+      }
+      if (loginPrincipals.size() != 1) {
+        LOG.warn("found more than one principal in the token cache file");
+      }
+      User ugiUser = new User(loginPrincipals.iterator().next().getName(),
+          AuthenticationMethod.TOKENAUTH, login);
+      loginSubject.getPrincipals().add(ugiUser);
+      UserGroupInformation ugi = new UserGroupInformation(loginSubject);
+      ugi.setLogin(login);
+      ugi.setAuthenticationMethod(AuthenticationMethod.TOKENAUTH);
+      return ugi;
+    } catch (LoginException le) {
+      throw new IOException("failure to login using ticket cache file", le);
+    }
+  }
 
   /**
    * Create a UserGroupInformation from a Subject with Kerberos principal.
@@ -806,7 +938,7 @@ public class UserGroupInformation {
     // logged in ugi if it's different
     loginUser = ugi;
   }
-  
+
   /**
    * Is this user logged in from a keytab file?
    * @return true if the credentials are from a keytab file.
@@ -893,6 +1025,50 @@ public class UserGroupInformation {
         t.setDaemon(true);
         t.setName("TGT Renewer for " + getUserName());
         t.start();
+      } else if (user.getAuthenticationMethod() == AuthenticationMethod.TOKENAUTH) {
+        Thread t = new Thread(new Runnable() {
+          
+          @Override
+          public void run() {
+            try {
+              //renew identity token 
+              org.apache.hadoop.security.tokenauth.token.Token 
+              identityToken = getIdentityToken();
+              if (identityToken == null) {
+                return;
+              }
+              long nextRefresh = TokenUtils.getRefreshTime(identityToken);
+              while (true) {
+                long now = Time.now();
+                if (now < nextRefresh) {
+                  Thread.sleep(nextRefresh - now);
+                }
+                
+                org.apache.hadoop.security.tokenauth.token.Token newToken = 
+                    SecurityUtil.getHASClient(conf).renewToken(identityToken);
+                TokenCache.refreshIdentityToken(TokenUtils.getBytesOfToken(newToken));
+                reloginFromTokenCache();
+                identityToken = getIdentityToken();
+                if (identityToken == null) {
+                  LOG.warn("No Identity token after renewal. Aborting renew thread for " +
+                      getUserName());
+                  return;
+                }
+                nextRefresh = Math.max(TokenUtils.getRefreshTime(identityToken), now);
+              }
+            } catch (InterruptedException ie) {
+              LOG.warn("Terminating renewal thread");
+              return;
+            } catch (IOException ie) {
+              LOG.warn("Exception encountered while running the" +
+                " renewal command. Aborting renew thread. " + ie);
+              return;
+            }
+          }
+        });
+        t.setDaemon(true);
+        t.setName("Identity token Renewer for " + getUserName());
+        t.start();
       }
     }
   }
@@ -938,6 +1114,67 @@ public class UserGroupInformation {
   }
   
   /**
+   * Log an user in from authentication file using tokenauth. Loads 
+   * a user identity from authentication file and logs them in
+   * @param user the principal name to load from the authentication file
+   * @param path the path to the authentication file
+   * @throws IOException
+   */
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public synchronized
+  static void loginUserFromAuthnFile(String user,
+                                  String path
+                                  ) throws IOException {
+    if ( !isSecurityEnabled() || authenticationMethod 
+        != AuthenticationMethod.TOKENAUTH)
+      return;
+        
+    tokenAuthFile = path;
+    tokenAuthPrincipal = user;
+    Subject subject = new Subject();
+    LoginContext login; 
+    long start = 0;
+    try {
+      login = newLoginContext(HadoopConfiguration.AUTHNFILE_TOKENAUTH_CONFIG_NAME,
+            subject, new HadoopConfiguration());
+      start = Time.now();
+      login.login();
+      metrics.loginSuccess.add(Time.now() - start);
+      loginUser = new UserGroupInformation(subject);
+      loginUser.setLogin(login);
+      loginUser.setAuthenticationMethod(AuthenticationMethod.TOKENAUTH);
+    } catch (LoginException le) {
+      if (start > 0) {
+        metrics.loginFailure.add(Time.now() - start);
+      }
+      throw new IOException("Login failure for " + user + " from authn file " + 
+                            path, le);
+    }
+    
+    LOG.info("Login successful for user " + tokenAuthPrincipal
+        + " using authentication file " + tokenAuthFile);
+  }
+
+  /**
+   * Re-login a user from authentication file is Identity token is expired or is close to expiry.
+   * @throws IOException
+   */
+  public synchronized void checkTokenAndReloginFromAuthnFile() throws IOException {
+    if(!isSecurityEnabled() 
+        || user.getAuthenticationMethod() != AuthenticationMethod.TOKENAUTH) {
+      return;
+    }
+    org.apache.hadoop.security.tokenauth.token.Token 
+      identityToken = getIdentityToken();
+    if(identityToken != null && (Time.now() <
+        TokenUtils.getRefreshTime(identityToken))) {
+      return;
+    }
+    reloginFromAuthnFile();
+  }
+
+  /**
    * Re-login a user from keytab if TGT is expired or is close to expiry.
    * 
    * @throws IOException
@@ -952,6 +1189,173 @@ public class UserGroupInformation {
       return;
     }
     reloginFromKeytab();
+  }
+  
+  /**
+   *  Re-login a user
+   * @throws IOException
+   */
+  public synchronized void checkSecurityAndRelogin() throws IOException {
+    checkTGTAndReloginFromKeytab();
+    checkTokenAndReloginFromAuthnFile();
+  }
+  
+  /**
+   * Re-Login a user in from an authentication file. Loads a user identity from a authentication
+   * file and logs them in. They become the currently logged-in user. This
+   * method assumes that {@link #loginUserFromKeytab(String, String)} had 
+   * happened already.
+   * The Subject field of this UserGroupInformation object is updated to have
+   * the new credentials.
+   * @throws IOException on a failure
+   */
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public synchronized void reloginFromAuthnFile() throws IOException {
+    if (!isSecurityEnabled() ||
+        user.getAuthenticationMethod() != AuthenticationMethod.TOKENAUTH)
+      return;
+
+    long now = Time.now();
+    org.apache.hadoop.security.tokenauth.token.Token 
+      identityToken = getIdentityToken();
+    if(identityToken != null && (now <
+        TokenUtils.getRefreshTime(identityToken))) {
+      return;
+    }
+   
+    LoginContext login = getLogin();
+    if (login == null || tokenAuthFile == null) {
+      throw new IOException("loginFromAuthnFile must be done first");
+    }
+
+    long start = 0;
+    // register most recent relogin attempt
+    user.setLastLogin(now);
+    try {
+      LOG.info("Initiating logout for " + getUserName());
+      synchronized (UserGroupInformation.class) {
+        // clear up the tokenauth state. But the tokens are not cleared!
+        login.logout();
+        // login and also update the subject field of this instance to
+        // have the new credentials (pass it to the LoginContext constructor)
+        login = newLoginContext(
+            HadoopConfiguration.AUTHNFILE_TOKENAUTH_CONFIG_NAME, getSubject(),
+            new HadoopConfiguration());
+        LOG.info("Initiating re-login for " + tokenAuthPrincipal);
+        start = Time.now();
+        login.login();
+        metrics.loginSuccess.add(Time.now() - start);
+        setLogin(login);
+      }
+    } catch (LoginException le) {
+      if (start > 0) {
+        metrics.loginFailure.add(Time.now() - start);
+      }
+      throw new IOException("Login failure for " + tokenAuthPrincipal + 
+          " from authnFile " + tokenAuthFile, le);
+   }
+  }
+
+  /**
+   * Re-Login a user in from the token cache.  This
+   * method assumes that login had happened already.
+   * The Subject field of this UserGroupInformation object is updated to have
+   * the new credentials.
+   * @throws IOException on a failure
+   */
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public synchronized void reloginFromTokenCache()
+      throws IOException {
+    if (!isSecurityEnabled() || 
+        user.getAuthenticationMethod() != AuthenticationMethod.TOKENAUTH)
+      return;
+    LoginContext login = getLogin();
+    if (login == null) {
+      throw new IOException("login must be done first");
+    }
+    long now = Time.now();
+
+    // register most recent relogin attempt
+    user.setLastLogin(now);
+    try {
+      LOG.info("Initiating logout for " + getUserName());
+      //clear up the tokenauth state. But the tokens are not cleared!
+      login.logout();
+      //login and also update the subject field of this instance to 
+      //have the new credentials (pass it to the LoginContext constructor)
+      login = 
+        newLoginContext(HadoopConfiguration.USER_TOKENAUTH_CONFIG_NAME, 
+            getSubject(), new HadoopConfiguration());
+      LOG.info("Initiating re-login for " + getUserName());
+      login.login();
+      setLogin(login);
+    } catch (LoginException le) {
+      throw new IOException("Login failure for " + getUserName(), le);
+    } 
+  }
+
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public synchronized void reloginForTokenAuth()
+    throws IOException {
+    if (tokenAuthFile != null) {
+      reloginFromAuthnFile();
+    } else {
+      reloginFromTokenCache();
+    }
+  }
+
+  /**
+   * Log a user in from a authentication file. Loads a user identity from an authentication
+   * file and login them in. This new user does not affect the currently
+   * logged-in user.
+   * @param user the principal name to load from the authentication file
+   * @param path the path to the authentication file
+   * @throws IOException
+   */
+  public synchronized
+  static UserGroupInformation loginUserFromAuthnFileAndReturnUGI(String user,
+                                  String path
+                                  ) throws IOException {
+    if (!isSecurityEnabled() 
+        || authenticationMethod != AuthenticationMethod.TOKENAUTH)
+      return UserGroupInformation.getCurrentUser();
+      
+    String oldTokenAuthFile = null;
+    String oldTokenAuthPrincipal = null;
+
+    long start = 0;
+    try {
+      oldTokenAuthFile = tokenAuthFile;
+      oldTokenAuthPrincipal = tokenAuthPrincipal;
+      tokenAuthFile = path;
+      tokenAuthPrincipal = user;
+      Subject subject = new Subject();
+      
+      LoginContext login = newLoginContext(
+          HadoopConfiguration.AUTHNFILE_TOKENAUTH_CONFIG_NAME, subject,
+          new HadoopConfiguration());
+
+      start = Time.now();
+      login.login();
+      metrics.loginSuccess.add(Time.now() - start);
+      UserGroupInformation newLoginUser = new UserGroupInformation(subject);
+      newLoginUser.setLogin(login);
+      newLoginUser.setAuthenticationMethod(AuthenticationMethod.TOKENAUTH);
+
+      return newLoginUser;
+    } catch (LoginException le) {
+      if (start > 0) {
+        metrics.loginFailure.add(Time.now() - start);
+      }
+      throw new IOException("Login failure for " + user + " from authnFile " + 
+                            path, le);
+    } finally {
+      if(oldTokenAuthFile != null) tokenAuthFile = oldTokenAuthFile;
+      if(oldTokenAuthPrincipal != null) tokenAuthPrincipal = oldTokenAuthPrincipal;
+    }
   }
 
   /**
@@ -1147,6 +1551,25 @@ public class UserGroupInformation {
   public static boolean isLoginTicketBased()  throws IOException {
     return getLoginUser().isKrbTkt;
   }
+  
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public synchronized Secrets getValidationSecrets() {
+    Iterator<Secrets> iterator = subject.
+        getPrivateCredentials(Secrets.class).iterator();
+    return iterator.hasNext() ? iterator.next() : null;
+  }
+
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
+  public synchronized org.apache.hadoop.security.tokenauth.token.Token 
+      getIdentityToken() {
+    Iterator<org.apache.hadoop.security.tokenauth.token.Token> 
+        iterator = subject.getPrivateCredentials(
+        org.apache.hadoop.security.tokenauth.token.Token.class).iterator();
+    
+    return iterator.hasNext() ? iterator.next() : null;
+  }
 
   /**
    * Create a user from a login name. It is intended to be used for remote
@@ -1180,8 +1603,11 @@ public class UserGroupInformation {
     KERBEROS(AuthMethod.KERBEROS,
         HadoopConfiguration.USER_KERBEROS_CONFIG_NAME),
     TOKEN(AuthMethod.TOKEN),
+    TOKENAUTH(AuthMethod.TOKENAUTH, 
+        HadoopConfiguration.USER_TOKENAUTH_CONFIG_NAME),
     CERTIFICATE(null),
     KERBEROS_SSL(null),
+    TOKENAUTH_SSL(null),
     PROXY(null);
     
     private final AuthMethod authMethod;
@@ -1387,6 +1813,29 @@ public class UserGroupInformation {
   }
   
   /**
+   * access token or identity token can be added to this UGI.
+   * this is used when creating remote user
+   */
+  public synchronized boolean addToken(
+      org.apache.hadoop.security.tokenauth.token.Token token) {
+    if (!subject.getPrivateCredentials(
+        org.apache.hadoop.security.tokenauth.token.Token.class).isEmpty()) {
+      throw new IllegalArgumentException("Only one token can be added.");
+    }
+    return subject.getPrivateCredentials().add(token);
+  }
+
+  public synchronized org.apache.hadoop.security.tokenauth.token.Token
+  getToken() {
+    if (!subject.getPrivateCredentials(
+        org.apache.hadoop.security.tokenauth.token.Token.class).isEmpty()) {
+      return subject.getPrivateCredentials(
+          org.apache.hadoop.security.tokenauth.token.Token.class).iterator().next();
+    }
+    return null;
+  }
+  
+  /**
    * Add a token to this UGI
    * 
    * @param token Token to be added
@@ -1465,8 +1914,18 @@ public class UserGroupInformation {
   public synchronized String[] getGroupNames() {
     ensureInitialized();
     try {
+      if(authenticationMethod == AuthenticationMethod.TOKENAUTH) {
+        org.apache.hadoop.security.tokenauth.token.Token
+        token = getToken();
+        if (token != null) {
+          return TokenUtils.getGroups(token);
+        } else {
+          return new String[0];
+        }
+      }
+      
       Set<String> result = new LinkedHashSet<String>
-        (groups.getGroups(getShortUserName()));
+          (groups.getGroups(getShortUserName()));
       return result.toArray(new String[result.size()]);
     } catch (IOException ie) {
       LOG.warn("No groups available for user " + getShortUserName());

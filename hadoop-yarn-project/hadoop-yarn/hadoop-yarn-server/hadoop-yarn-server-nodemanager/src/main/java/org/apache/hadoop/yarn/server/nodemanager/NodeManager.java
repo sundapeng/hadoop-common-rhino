@@ -33,6 +33,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.metrics2.lib.DefaultMetricsSystem;
 import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.ShutdownHookManager;
@@ -121,8 +123,13 @@ public class NodeManager extends CompositeService
   }
 
   protected void doSecureLogin() throws IOException {
-    SecurityUtil.login(getConfig(), YarnConfiguration.NM_KEYTAB,
-        YarnConfiguration.NM_PRINCIPAL);
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      SecurityUtil.tokenAuthLogin(getConfig(), YarnConfiguration.NM_AUTHENTICATION_FILE, 
+          YarnConfiguration.NM_PRINCIPAL);
+    } else {
+      SecurityUtil.login(getConfig(), YarnConfiguration.NM_KEYTAB,
+          YarnConfiguration.NM_PRINCIPAL);
+    }
   }
 
   @Override

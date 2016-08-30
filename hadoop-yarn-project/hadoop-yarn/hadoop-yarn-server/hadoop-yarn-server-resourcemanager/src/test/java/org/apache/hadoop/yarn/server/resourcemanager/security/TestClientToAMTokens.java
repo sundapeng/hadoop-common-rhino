@@ -47,6 +47,7 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenInfo;
 import org.apache.hadoop.security.token.TokenSelector;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.ContainerManagementProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationReportRequest;
@@ -104,6 +105,11 @@ public class TestClientToAMTokens {
 
     @Override
     public KerberosInfo getKerberosInfo(Class<?> protocol, Configuration conf) {
+      return null;
+    }
+
+    @Override
+    public TokenAuthInfo getTokenAuthInfo(Class<?> protocol, Configuration conf) {
       return null;
     }
   };

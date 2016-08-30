@@ -127,8 +127,14 @@ public class DelegationTokenManagerService extends BaseService
     if (ugi.getRealUser() != null) {
       realUser = new Text(ugi.getRealUser().getUserName());
     }
-    DelegationTokenIdentifier tokenIdentifier =
+    DelegationTokenIdentifier tokenIdentifier;
+    if (UserGroupInformation.isTokenAuthEnabled()) {
+      tokenIdentifier = new DelegationTokenIdentifier(
+          owner, new Text(renewer), realUser, ugi.getToken());
+    } else {
+      tokenIdentifier =
       new DelegationTokenIdentifier(tokenKind, owner, new Text(renewer), realUser);
+    }
     Token<DelegationTokenIdentifier> token =
       new Token<DelegationTokenIdentifier>(tokenIdentifier, secretManager);
     try {

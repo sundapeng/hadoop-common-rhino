@@ -20,6 +20,7 @@ package org.apache.hadoop.security;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 /**
  * Constructs SecurityInfo from Annotations provided in protocol interface.
@@ -29,6 +30,11 @@ public class AnnotatedSecurityInfo extends SecurityInfo {
   @Override
   public KerberosInfo getKerberosInfo(Class<?> protocol, Configuration conf) {
     return protocol.getAnnotation(KerberosInfo.class);
+  }
+  
+  @Override
+  public TokenAuthInfo getTokenAuthInfo(Class<?> protocol, Configuration conf) {
+    return protocol.getAnnotation(TokenAuthInfo.class);
   }
 
   @Override

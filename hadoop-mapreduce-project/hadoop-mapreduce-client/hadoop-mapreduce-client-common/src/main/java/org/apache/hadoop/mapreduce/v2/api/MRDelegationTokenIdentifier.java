@@ -40,7 +40,7 @@ public class MRDelegationTokenIdentifier extends AbstractDelegationTokenIdentifi
  
   public MRDelegationTokenIdentifier() {
   }
-  
+
   /**
    * Create a new delegation token identifier
    * @param owner the effective username of the token owner
@@ -50,7 +50,11 @@ public class MRDelegationTokenIdentifier extends AbstractDelegationTokenIdentifi
   public MRDelegationTokenIdentifier(Text owner, Text renewer, Text realUser) {
     super(owner, renewer, realUser);
   }
-
+  
+  public MRDelegationTokenIdentifier(Text owner, Text renewer, Text realUser,
+      org.apache.hadoop.security.tokenauth.token.Token token) {
+    super(owner, renewer, realUser, token);
+  }
  
   @Override
   public Text getKind() {

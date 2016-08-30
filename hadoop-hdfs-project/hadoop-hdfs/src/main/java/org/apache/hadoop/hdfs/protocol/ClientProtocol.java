@@ -53,6 +53,7 @@ import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.KerberosInfo;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenInfo;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
 
 /**********************************************************************
  * ClientProtocol is used by user code via 
@@ -65,6 +66,8 @@ import org.apache.hadoop.security.token.TokenInfo;
 @InterfaceStability.Evolving
 @KerberosInfo(
     serverPrincipal = DFSConfigKeys.DFS_NAMENODE_KERBEROS_PRINCIPAL_KEY)
+@TokenAuthInfo(
+    serverPrincipal = DFSConfigKeys.DFS_NAMENODE_TOKENAUTH_PRINCIPAL_KEY)
 @TokenInfo(DelegationTokenSelector.class)
 public interface ClientProtocol {
 

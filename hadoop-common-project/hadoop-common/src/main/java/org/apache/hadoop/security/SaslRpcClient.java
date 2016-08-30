@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,9 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenInfo;
 import org.apache.hadoop.security.token.TokenSelector;
+import org.apache.hadoop.security.tokenauth.DefaultTokenAuthCallbackHandler;
+import org.apache.hadoop.security.tokenauth.TokenAuthInfo;
+import org.apache.hadoop.security.tokenauth.sasl.SaslTokenAuthClient;
 import org.apache.hadoop.util.ProtoUtil;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -98,6 +102,10 @@ public class SaslRpcClient {
           RpcConstants.INVALID_RETRY_COUNT, RpcConstants.DUMMY_CLIENT_ID);
   private static final RpcSaslProto negotiateRequest =
       RpcSaslProto.newBuilder().setState(SaslState.NEGOTIATE).build();
+  
+  static {
+    Security.addProvider(new SaslTokenAuthClient.SecurityProvider());
+  }
   
   /**
    * Create a SaslRpcClient that can be used by a RPC client to negotiate
@@ -223,6 +231,22 @@ public class SaslRpcClient {
         saslCallback = new SaslClientCallbackHandler(token);
         break;
       }
+      case TOKENAUTH : {
+        if (ugi.getRealAuthenticationMethod().getAuthMethod() !=
+            AuthMethod.TOKENAUTH) {
+          return null; // client isn't using tokenauth
+        }
+        String serverPrincipal = getTokenAuthServerPrincipal(authType);
+        if (serverPrincipal == null) {
+          return null; //protocol doesn't use tokenauth
+        }
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("RPC Server's TokenAuth principal name for protocol="
+              + protocol.getCanonicalName() + " is " + serverPrincipal);
+        }
+        saslCallback = new DefaultTokenAuthCallbackHandler();
+        break;
+      }
       case KERBEROS: {
         if (ugi.getRealAuthenticationMethod().getAuthMethod() !=
             AuthMethod.KERBEROS) {
@@ -275,6 +299,23 @@ public class SaslRpcClient {
     }
     return tokenSelector.selectToken(
         SecurityUtil.buildTokenService(serverAddr), ugi.getTokens());
+  }
+  
+  @VisibleForTesting
+  String getTokenAuthServerPrincipal(SaslAuth authType) throws IOException {
+    TokenAuthInfo taInfo = SecurityUtil.getTokenAuthInfo(protocol, conf);
+    if(taInfo == null) {
+      return null;
+    }
+    String serverKey = taInfo.serverPrincipal();
+    if (serverKey == null) {
+      throw new IllegalArgumentException(
+          "Can't obtain server Tokenauth config key from protocol="
+              + protocol.getCanonicalName());
+    }
+    
+    return SecurityUtil.getServerPrincipal(
+        conf.get(serverKey), serverAddr.getAddress());
   }
   
   /**
